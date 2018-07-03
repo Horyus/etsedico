@@ -1,0 +1,7 @@
+node_modules
+/sources
+/index.js
+/CHANGELOG.md
+/CONTRIBUTING.md
+/README.md
+*.test.ts

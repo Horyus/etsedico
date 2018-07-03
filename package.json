@@ -1,0 +1,54 @@
+{
+  "name": "etsedico",
+  "version": "0.0.2",
+  "description": "Ethereum Secured Direct Communication",
+  "main": "./index.js",
+  "browser": "./index.js",
+  "scripts": {
+    "postinstall": "tsc",
+    "test": "tslint --project . && jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Horyus/etsedico.git"
+  },
+  "keywords": [
+    "communication",
+    "ethereum",
+    "p2p",
+    "ecdsa",
+    "ecdh",
+    "direct",
+    "utp"
+  ],
+  "author": "Horyus",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Horyus/etsedico/issues"
+  },
+  "homepage": "https://github.com/Horyus/etsedico#readme",
+  "devDependencies": {
+    "jest": "^23.2.0",
+    "linted": "0.0.2",
+    "ts-jest": "^23.0.0",
+    "tslint": "^5.10.0"
+  },
+  "dependencies": {
+    "@types/node": "^10.5.1",
+    "typescript": "^2.9.2"
+  }
+}
