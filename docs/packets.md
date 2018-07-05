@@ -75,8 +75,6 @@ The first `µPacket` contains the `Header`. Then all the following ones the `Bod
 `µHeader` is not encrypted.
 `Header` is encrypted without body.
 `Body` is encrypted as a whole element then split into `µPackets`.
-We assume that encrypted body has the same size as unencrypted. This is almost never the case, but changes nothing in
-the general logic.
 
 ```
 Raw Body
@@ -157,9 +155,44 @@ one `µPacket`.
 | `session_public_key` | EC Temporary public key used for dynamic signatures | `33` |
 | `session_signature` | ECDSA Signature of the `session_public_key` emitted from the `master_address` | `65` |
 | `miss_size` | Size of miss field | `2` |
-| `miss` | Data indicating missing `µPackets` indexes, in Miss Field Format. | `0` to `280` |
+| `miss` | Data indicating missing `µPackets` indexes, in [Miss Field Format](#miss_field_format). | `0` to `280` |
 | `security_signature` | Signature of all the previous made from session keypair | `65` |
 ---
+
+<a name="miss_field_format"></a>
+### Miss Field Format
+
+The Miss Field Format is used to list `µPacket` indexes that need to be sent again.
+
+Two schemas are available.
+
+`x:y` defines value `y` stored in `x` bytes.
+
+#### Unique list
+
+Used to list unique indexes.
+```
+|1:1|4:count|4:idx1| ... |4:idx_count|
+```
+```
+|1:1|4:5|4:22|4:33|4:44|4:55|4:66|
+----------------------------------
+Missing indexes are 22, 33, 44, 55
+and 66.
+```
+
+#### Range list
+
+Used to capture multiple missing indexes that are a suite.
+```
+|1:2|4:begin_idx|4:end_idx|
+```
+```
+|1:2|4:5|4:10|
+------------------------------------
+Missing indexes are 5, 6, 7, 8, 9
+and 10.
+```
 
 ### Encryption Schema
 
