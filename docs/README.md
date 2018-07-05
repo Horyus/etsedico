@@ -2,4 +2,6 @@
 
 The following documents explain in details everything you need to know about `etsedico`.
 
-- [Packet Protocol](./packets.md): Explains the different types of packets and their content.
+- [Handshake Protocol](./handshake.md): Explains the different types of packets in the handshake process and the general pipeline
+- [Packet Protocol](./packets.md): Explains the different types of packets and their content
+
