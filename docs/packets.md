@@ -14,19 +14,21 @@ into `µPackets`, that have a maximum size of 508 bytes. `etsedico` is able to r
 ensuring message safety and authenticity. `etsedico` was not built for large packets transmission, and should be used with something
 like `IPFS` to store and exchange large data.
 
-## `µPackets`
+### `µPackets`
 
 As messages will often be bigger than 508 bytes, we need to cut them into `µPackets`. Each `µPacket` has a `µHeader` containing
-the `µPacket` timestamp, index and size. This information is used for integrity checks and reconstitution. We are using [AES256CTR](https://www.npmjs.com/package/aes-js)
+the `µPacket` packet id, index and size. This information is used for integrity checks and reconstitution. We are using [AES256CTR](https://www.npmjs.com/package/aes-js)
 for encryption, and we have no size difference between encrypted and decrypted data.
+
+`µPackets` with idx of 0 will have a `nanosecond_timestamp` as packet id. Those with idx > 0 will have the first 8 bytes of `keccak256(string(nanosecond_timestamp) + checksummed(master_address))` (and `master_address` has no `0x` prefix).
 
 ---
 <a name="uheader"></a>
-### `µHeader`: 14 bytes
+#### `µHeader`: 14 bytes
 
 | Field Name | Field Description | Field Byte Size |
 |------------|-------------------|-----------------|
-| `timestamp` | Nanosecond timestamp, unique for each message between two peers, used like a message ID for reconstitution | `8` |
+| `packet_id` | Nanosecond timestamp if idx is `0`. Otherwise, `keccak256(string(nanosecond_timestamp) + checksummed(master_address))`.  | `8` |
 | `index` | Index of the current `µPacket`. If `0`, contains `Header` | `4` |
 | `size` | Size of current `µPacket` | `2` |
 ---
@@ -36,19 +38,22 @@ for encryption, and we have no size difference between encrypted and decrypted d
 Each `Packet` has a mandatory `Header` that contains informations and security informations. This Header will always fit
 inside one `µPacket`. The `Body` can be separated between multiple `µPackets`.
 
-## Packet Types
+### Packet Types
 
 - Data Packet (1)
 - Confirmation Packet (2)
 - Loss Packet (3)
 
-## Data Packet
+---
+---
+
+### Data Packet
 
 The first `µPacket` contains the `Header`. Then all the following ones the `Body`.
 
----
+--
 <a name="data_packet_header"></a>
-### `Data Packet Header`: 14 bytes (µHeader) + 272 bytes
+#### `Data Packet Header`: 14 bytes (µHeader) + 272 bytes
 | Field Name | Field Description | Field Byte Size |
 |------------|-------------------|-----------------|
 | `µHeader` | [`µHeader`](#uheader) | `14` |
@@ -61,16 +66,16 @@ The first `µPacket` contains the `Header`. Then all the following ones the `Bod
 | `body_checksum` | `keccak256` Checksum of whole body | `32` |
 | `body_packets` | Amount of `µPackets` that contain the body | `4` |
 | `security_signature` | Signature of all the previous made from session keypair | `65` |
----
+--
 <a name="data_packet_body_fragment"></a>
-### `Data Packet Body Fragment`: 14 bytes (µHeader) + 0 to 494 bytes
+#### `Data Packet Body Fragment`: 14 bytes (µHeader) + 0 to 494 bytes
 | Field Name | Field Description | Field Byte Size |
 |------------|-------------------|-----------------|
 | `µHeader` | [`µHeader`](#uheader) | `14` |
 | `data` | Packet type | `µHeader`.`size` |
----
+--
 
-### Encryption Schema
+#### Encryption Schema
 
 `µHeader` is not encrypted.
 `Header` is encrypted without body.
@@ -114,42 +119,48 @@ Complete Data Packet Sequence
 Header is built after Body encryption, to be able to enter checksum and `µPacket` count.
 A `Packet` is considered as received when all the `µPackets` are properly received.
 
-## Confirmation Packet
+---
+---
+
+### Confirmation Packet
 
 Used to notify the sender that the whole Data Packet has been properly received.
 
----
+--
 <a name="confirmation_packet_header"></a>
-### `Confirmation Packet`: 14 bytes (µHeader) + 212 bytes
+#### `Confirmation Packet`: 14 bytes (µHeader) + 212 bytes
 | Field Name | Field Description | Field Byte Size |
 |------------|-------------------|-----------------|
 | `µHeader` | [`µHeader`](#uheader) | `14` |
 | `type` | Packet type (here 2) | `1` |
-| `timestamp` | Timestamp of previous packet that is getting confirmed | `8` |
+| `packet_id` | Package id of previous packet that is getting confirmed | `8` |
 | `master_address` | Ethereum Real Address of the user | `20` |
 | `destination_address` | Ethereum Real Address of destination user | `20` |
 | `session_public_key` | EC Temporary public key used for dynamic signatures | `33` |
 | `session_signature` | ECDSA Signature of the `session_public_key` emitted from the `master_address` | `65` |
 | `security_signature` | Signature of all the previous made from session keypair | `65` |
----
+--
 
-### Encryption Schema
+#### Encryption Schema
 
 Everything except the `µHeader` is encrypted with the handshake key.
 
-## Loss Packet
+---
+---
+
+### Loss Packet
 
 This packet is used to notify the sender of possible `µPackets` that did not make it in a Data Packet. It fits into
 one `µPacket`.
 
----
+--
 <a name="loss_packet_header"></a>
-### `Loss Packet`: 14 bytes (µHeader) + 214 to 494 bytes
+#### `Loss Packet`: 14 bytes (µHeader) + 214 to 494 bytes
 | Field Name | Field Description | Field Byte Size |
 |------------|-------------------|-----------------|
 | `µHeader` | [`µHeader`](#uheader) | `14` |
 | `type` | Packet type (here 3) | `1` |
-| `timestamp` | Timestamp of previous packet with missing `µPackets` | `8` |
+| `packet_id` | Package id of previous packet with missing `µPackets` | `8` |
 | `master_address` | Ethereum Real Address of the user | `20` |
 | `destination_address` | Ethereum Real Address of destination user | `20` |
 | `session_public_key` | EC Temporary public key used for dynamic signatures | `33` |
@@ -157,10 +168,10 @@ one `µPacket`.
 | `miss_size` | Size of miss field | `2` |
 | `miss` | Data indicating missing `µPackets` indexes, in [Miss Field Format](#miss_field_format). | `0` to `280` |
 | `security_signature` | Signature of all the previous made from session keypair | `65` |
----
+--
 
 <a name="miss_field_format"></a>
-### Miss Field Format
+#### Miss Field Format
 
 The Miss Field Format is used to list `µPacket` indexes that need to be sent again.
 
@@ -168,7 +179,7 @@ Two schemas are available.
 
 `x:y` defines value `y` stored in `x` bytes.
 
-#### Unique list
+##### Unique list
 
 Used to list unique indexes.
 ```
@@ -181,7 +192,7 @@ Missing indexes are 22, 33, 44, 55
 and 66.
 ```
 
-#### Range list
+##### Range list
 
 Used to capture multiple missing indexes that are a suite.
 ```
@@ -194,7 +205,6 @@ Missing indexes are 5, 6, 7, 8, 9
 and 10.
 ```
 
-### Encryption Schema
+#### Encryption Schema
 
 Everything except the `µHeader` is encrypted with the handshake key.
-
