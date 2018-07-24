@@ -2,7 +2,7 @@ declare var describe;
 declare var test;
 declare var expect;
 
-import { MiddlewareChain } from './middlewarechain';
+import { MiddlewareChain } from './MiddlewareChain';
 
 describe('Dummy Test Suite', () => {
 

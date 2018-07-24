@@ -2,7 +2,7 @@ declare var describe;
 declare var test;
 declare var expect;
 
-import {Etsedico} from "./etsedico";
+import { Etsedico } from "./Etsedico";
 
 describe("Dummy Test Suite", () => {
 
