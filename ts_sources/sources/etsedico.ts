@@ -1,6 +1,6 @@
 export class Etsedico {
 
-    private useless: string = "";
+    private readonly useless: string = "";
 
     constructor(value: string) {
         this.useless = value;
