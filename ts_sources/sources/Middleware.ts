@@ -50,9 +50,10 @@ export interface MiddlewareActionContinue<DataType = any> extends MiddlewareActi
  * End action implementation.
  *
  * @interface MiddlewareActionEnd
+ * @param {DataType} payload Data probably exiting chain
  */
 export interface MiddlewareActionEnd<DataType = any> extends MiddlewareAction<DataType> {
-
+    payload: DataType;
 }
 
 /**
