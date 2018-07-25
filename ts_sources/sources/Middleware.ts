@@ -1,7 +1,5 @@
-import { EventEmitter } from 'events';
-
-export { EventEmitter } from 'events';
-
+export { EventEmitter }          from 'events';
+import { EventEmitter }          from 'events';
 import { MiddlewareNamingRegex } from './Utils';
 
 /**
@@ -12,7 +10,7 @@ import { MiddlewareNamingRegex } from './Utils';
  */
 export interface MiddlewareOptions<ConfigType = any> {
     weight?: number;
-    config: MiddlewareConfig<ConfigType>;
+    config?: MiddlewareConfig<ConfigType>;
 }
 
 /**
@@ -92,40 +90,89 @@ export type MiddlewareFunction<DataType = any, EnvType = any> = (data: DataType,
 
 export type MiddlewareConfig<ConfigType = any> = (config: ConfigType) => Promise<boolean>;
 
-/** Middleware class */
+/**
+ * Middleware Class. Fancy callback encapsulation. Used to be chained before actions. Useful for plugin-based projects.
+ *
+ * ```typescript
+ *
+ * // Create your middleware callback
+ * const append_a_middleware: MiddlewareFunction<string, any> = (data: string, env: any, next: MiddlewareNext<string>, event: MiddlewareEvent): void => {
+ *
+ *    // Emit your events
+ *    event('my_own_custom_event', data);
+ *
+ *    // Send an action to the MiddlewareCHhain
+ *    next({
+ *        type: MiddlewareActionTypes.Continue,
+ *        payload: data + (env.letter || '?')
+ *    } as MiddlewareActionContinue<string>);
+ * };
+ *
+ * // Create your custom config checker
+ * const config_checker: MiddlewareConfig<string> = async (config: string): Promise<boolean> => {
+ *      return (config.properly_configured);
+ * };
+ *
+ * // Give weight to your Middleware and it would get sorted in the MiddlewareChain. Higher has more priority.
+ * const weight = 123;
+ *
+ * // Give your own event emitter
+ * const event_emitter = new EventEmitter();
+ *
+ * const middleware = new Middleware('my_very_own_middleware', append_a_middleware, event_emitter, {weight: weight, config: config_checker});
+ *
+ * // Calls your config_checker. If no config checker is set, always returns true.
+ * middleware.configure({properly_configured: true});
+ *
+ * // true
+ *
+ * // Run your middleware. You should always return a MiddlewareAction implementation (like MiddlewareActionContinue)
+ * middleware.run('the first letter of the alphabet is ', {letter: 'a'});
+ *
+ * //   {
+ * //       type: MiddlewareActionTypes.Continue,
+ * //       payload: 'the first letter of the alphabet is a'
+ * //   }
+ *
+ * ```
+ *
+ * @param DataType The data going through the {@link Middleware} instances can be extended from the DataType.
+ * @param EnvType Type of the env given to all the {@link Middleware} instances. The Env is a mean of communication between {@link Middleware} instances, caching, data saving ...
+ * @param ConfigType Type of the config object given when called the configure method.
+ */
 export class Middleware<DataType = any, EnvType = any, ConfigType = any> {
 
     /**
-     * Name of the middleware.
+     * Name of the {@link Middleware}.
      */
     public readonly name: string;
 
     /**
-     * Weight of the middleware. Defaults to 0.
+     * Weight of the {@link Middleware}. Defaults to 0.
      */
     public weight: number = 0;
 
     /**
-     * Middleware function.
+     * {@link Middleware} function.
      */
     private readonly mdw: MiddlewareFunction<DataType, EnvType>;
 
     /**
-     * Middleware configuration checker.
+     * {@link Middleware} configuration checker.
      */
     private config: MiddlewareConfig<ConfigType>;
 
     /**
-     * Event emitter exposed in the middleware function.
+     * Event emitter exposed in the {@link Middleware} function.
      */
     private readonly event: EventEmitter;
 
     /**
-     * Creates a Middleware.
+     * Creates a {@link Middleware}.
      *
-     * @param {string} _name Name to give to the middleware
-     * @param {MiddlewareFunction} _mdw Middleware function
-     * @param {EventEmitter} _event Event Emitter for the middleware function
+     * @param {string} _name Name to give to the {@link Middleware}
+     * @param {MiddlewareFunction} _mdw {@link Middleware} function
+     * @param {EventEmitter} _event Event Emitter for the {@link Middleware} function
      * @param {MiddlewareOptions} _options Deep options configuration
      */
     public constructor(_name: string,
@@ -150,7 +197,7 @@ export class Middleware<DataType = any, EnvType = any, ConfigType = any> {
     }
 
     /**
-     * Sends configuration to middleware. Allows config check.
+     * Sends configuration to {@link Middleware}. Allows config check.
      *
      * @param _config
      */
@@ -163,10 +210,10 @@ export class Middleware<DataType = any, EnvType = any, ConfigType = any> {
     }
 
     /**
-     * Run middleware function and recover MiddlewareAction
+     * Run {@link Middleware} function and recover {@link MiddlewareAction}
      *
-     * @param _data Data to send to middleware function
-     * @param _env Env to send to middleware function
+     * @param _data Data to send to {@link Middleware} function
+     * @param _env Env to send to {@link Middleware} function
      */
     public async run(_data: DataType, _env: EnvType): Promise<MiddlewareAction<DataType>> {
         return new Promise<MiddlewareAction<DataType>>(async (ok: any, ko: any): Promise<void> => {
@@ -199,9 +246,9 @@ export class Middleware<DataType = any, EnvType = any, ConfigType = any> {
     }
 
     /**
-     * Emit encapsulation. Used to wrap event with middleware name.
+     * Emit encapsulation. Used to wrap event with {@link Middleware} name.
      *
-     * @param _event_name Name of events. Will be combined with name of middleware.
+     * @param _event_name Name of events. Will be combined with name of {@link Middleware}.
      * @param args Arguments forwarded to event emitter.
      * @private
      */

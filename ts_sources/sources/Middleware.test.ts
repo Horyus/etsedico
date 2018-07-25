@@ -35,10 +35,8 @@ const string_any_middleware_throw: MiddlewareFunction<string, any> = (data: stri
     throw new Error('Test throw');
 };
 
-const string_config: MiddlewareConfig<string> = async (config: string) => {
-    return new Promise<boolean>((ok: any, _: any): void => {
-        ok(false);
-    });
+const string_config: MiddlewareConfig<string> = async (config: string): Promise<boolean> => {
+    return false;
 };
 
 type Done = (reason?: Error) => void;

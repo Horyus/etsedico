@@ -1,4 +1,5 @@
 node_modules
 /sources
 /index.js
+/generated_doc
 /coverage
