@@ -1,3 +1,3 @@
-import {Etsedico} from "./sources/etsedico";
+import { Etsedico } from './sources/Etsedico';
 
-const esdc = new Etsedico("name");
+const esdc = new Etsedico('name');

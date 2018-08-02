@@ -6,7 +6,10 @@
   "browser": "./index.js",
   "scripts": {
     "postinstall": "tsc",
-    "test": "tslint --project . && jest"
+    "test": "npm run lint && jest --coverage",
+    "lint": "tslint --format verbose --project .",
+    "codecov": "codecov",
+    "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Ξtsedico'"
   },
   "jest": {
     "testURL": "http://localhost",
@@ -43,13 +46,17 @@
   },
   "homepage": "https://github.com/Horyus/etsedico#readme",
   "devDependencies": {
+    "codecov": "^3.0.4",
     "jest": "^23.2.0",
-    "linted": "0.0.2",
+    "linted": "^1.0.3",
     "ts-jest": "^23.0.0",
-    "tslint": "^5.10.0"
+    "tslint": "^5.10.0",
+    "typedoc": "^0.11.1",
+    "typedoc-thunder-theme": "0.0.1"
   },
   "dependencies": {
     "@types/node": "^10.5.1",
-    "typescript": "^2.9.2"
+    "typescript": "^2.9.2",
+    "utp-punch": "^1.0.0"
   }
 }
