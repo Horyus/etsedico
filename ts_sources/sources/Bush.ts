@@ -4,6 +4,7 @@ import { MiddlewareChain }                                     from './Middlewar
 import { EventEmitter, MiddlewareFunction, MiddlewareOptions } from './Middleware';
 import { ConnectionInfos, Signature }                          from './ConnectionInfos';
 import { PathNamingRegex }                                     from './Utils';
+import { IBushPlugin }                                         from './IBushPlugin';
 
 /**
  * Type of Env
@@ -84,7 +85,7 @@ export interface PostBindDT {
  * DataType for the New Connection {@link MiddlewareChain} instance.
  */
 export interface NewConnectionDT {
-   connection?: ConnectionInfos;
+    connection?: ConnectionInfos;
 }
 
 /**
@@ -212,6 +213,8 @@ export class Bush {
 
     private readonly message_callbacks: OnMessageFunction[] = [];
 
+    private readonly plugins: IBushPlugin[] = [];
+
     /**
      * Create an instance of Bush - Bidirectional UTP Socket Handler
      *
@@ -248,6 +251,7 @@ export class Bush {
      * Start the socket. Binds it. Listen.
      */
     public async start(): Promise<void> {
+        this._plug();
         await this._configure();
         this.utp = new UTP(async (socket: any): Promise<void> => {
             const infos = new ConnectionInfos(socket, true);
@@ -707,6 +711,15 @@ export class Bush {
         return this.connections[signature];
     }
 
+    /**
+     * Add plugin to plugin list. Inject happens only when start is called.
+     *
+     * @param {IBushPlugin} plugin Class implementing the IBushPlugin interface.
+     */
+    public plug(plugin: IBushPlugin): void {
+        this.plugins.push(plugin);
+    }
+
     private static _path_to_array(path: string): string[] {
         const splitted = path.split('.');
         for (const split of splitted) {
@@ -802,6 +815,16 @@ export class Bush {
 
         await this.post_disconnect_mdw.configure(this.config);
         await this.pre_disconnect_mdw.configure(this.config);
+    }
+
+    private _plug(): void {
+        for (const plugin of this.plugins) {
+            try {
+                plugin.inject(this);
+            } catch (e) {
+                throw new Error(`In Plugin ${plugin.name}: ${e.message}`);
+            }
+        }
     }
 
 }

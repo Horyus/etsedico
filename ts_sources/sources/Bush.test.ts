@@ -20,7 +20,8 @@ import {
     PreBindDT,
     PreDisconnectDT,
     ReceiveDT
-} from './Bush';
+}                      from './Bush';
+import { IBushPlugin } from './IBushPlugin';
 
 let george;
 let bush;
@@ -102,6 +103,36 @@ const interrupt_mdw: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env:
         payload: {signature: data.signature, data: new Buffer(data.data.toString().toUpperCase()), __interrupt_signal: true}
     } as MiddlewareActionContinue<ReceiveDT>);
 };
+
+// Test Plugins
+
+// tslint:disable-next-line:max-classes-per-file
+class WorkingPlugin implements IBushPlugin {
+
+    public name: string;
+
+    public constructor(_name: string) {
+        this.name = _name;
+    }
+
+    public inject(bush: Bush): void {
+        bush.addPreDisconnectMiddleware(`${this.name}_signature_eraser`, signature_eraser, {weight: 12});
+    }
+}
+
+// tslint:disable-next-line:max-classes-per-file
+class ThrowingPlugin implements IBushPlugin {
+
+    public name: string;
+
+    public constructor(_name: string) {
+        this.name = _name;
+    }
+
+    public inject(bush: Bush): void {
+        throw new Error('manual error');
+    }
+}
 
 const env = {};
 const event = new EventEmitter();
@@ -1004,7 +1035,7 @@ describe('Bush Test Suite', () => {
 
     describe('Testing Env Features', () => {
 
-        test('Setting data in env with invalid path', (done) => {
+        test('Setting data in env with invalid path', (done: Done) => {
             try {
                 const bush_event = new EventEmitter();
                 const bush_env = {};
@@ -1068,7 +1099,7 @@ describe('Bush Test Suite', () => {
         });
 
     });
-    
+
     describe('Testing Config Features', () => {
 
         test('Setting data in config', () => {
@@ -1116,6 +1147,36 @@ describe('Bush Test Suite', () => {
                 bush.addConfig('this.is.going.too.deep', {testing: 'test'});
                 bush.removeConfig('this.is.going.way.too.deep');
                 done(new Error('Should not delete non existing path'));
+            } catch (e) {
+                done();
+            }
+        });
+
+    });
+
+    describe('Testing Plugin Features', () => {
+
+        // @ts-ignore
+        test('Adding working plugin', async (done: Done) => {
+                const bush_event = new EventEmitter();
+                const bush_env = {};
+
+                bush = new Bush({event: bush_event, env: bush_env});
+                bush.plug(new WorkingPlugin('working_plugin'));
+                await bush.start();
+                done();
+        });
+
+        // @ts-ignore
+        test('Adding throwing plugin', async (done: Done) => {
+            try {
+                const bush_event = new EventEmitter();
+                const bush_env = {};
+
+                bush = new Bush({event: bush_event, env: bush_env});
+                bush.plug(new ThrowingPlugin('throwing_plugin'));
+                await bush.start();
+                done(new Error('Plugin should throw'));
             } catch (e) {
                 done();
             }
