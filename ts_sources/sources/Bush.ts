@@ -409,10 +409,33 @@ export class Bush {
             if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = {};
             navigator = navigator[complete_path[path_bit]];
         }
+        if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = {};
         navigator[complete_path[path_bit]] = {
             ...data,
             ...navigator[complete_path[path_bit]]
         };
+    }
+
+    /**
+     * Add data at provided path. Make use of spread operator to merge with data already there (if any).
+     * Interpret the path as an array.
+     *
+     * @param {string} path A path to the data to add (example 'foo.bar.test')
+     * @param {any} data Data to add
+     */
+    public pushEnv(path: string, data: any): void {
+        let navigator = this.env;
+        let path_bit = 0;
+        const complete_path = Bush._path_to_array(path);
+        for (; path_bit < complete_path.length - 1; ++path_bit) {
+            if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = {};
+            navigator = navigator[complete_path[path_bit]];
+        }
+        if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = [];
+        navigator[complete_path[path_bit]] = [
+            ...navigator[complete_path[path_bit]],
+            data
+        ];
     }
 
     /**
@@ -477,6 +500,28 @@ export class Bush {
     }
 
     /**
+     * Add data at provided path. Make use of spread operator to merge with data already there (if any).
+     * Interpret the path as an array.
+     *
+     * @param {string} path A path to the data to add (example 'foo.bar.test')
+     * @param {any} data Data to add
+     */
+    public pushConfig(path: string, data: any): void {
+        let navigator = this.config;
+        let path_bit = 0;
+        const complete_path = Bush._path_to_array(path);
+        for (; path_bit < complete_path.length - 1; ++path_bit) {
+            if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = {};
+            navigator = navigator[complete_path[path_bit]];
+        }
+        if (!navigator[complete_path[path_bit]]) navigator[complete_path[path_bit]] = [];
+        navigator[complete_path[path_bit]] = [
+            ...navigator[complete_path[path_bit]],
+            data
+        ];
+    }
+
+    /**
      * Remove the data at the provided path
      *
      * @param {string} path A path to the data to remove (example 'foo.bar.test')
@@ -499,6 +544,7 @@ export class Bush {
      */
     public plug(plugin: IBushPlugin): void {
         this.plugins.push(plugin);
+        this.pushConfig('loaded.plugins', plugin.name);
     }
 
     private _add_mdw<DataType = any, EnvType = any, ConfigType = any>(_where: string, _name: string, _mdw_func: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
@@ -508,6 +554,7 @@ export class Bush {
         if (!this[_where]) throw new Error(`Invalid middleware addition. No such MiddlewareChain '${_where}'`);
 
         (<MiddlewareChain<DataType, EnvType, ConfigType>> this[_where]).addMiddleware(_name, _mdw_func, _options);
+        this.pushConfig('loaded.middlewares', _name);
     }
 
     private static _path_to_array(path: string): string[] {

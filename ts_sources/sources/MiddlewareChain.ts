@@ -130,6 +130,56 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
      */
     public addMiddleware(_name: string, _mdw: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
         if (MiddlewareChain.name_registry[_name]) throw new Error('Middleware name already in use');
+
+        if (_options) {
+            let before_values;
+            let after_values;
+
+            if (_options.before) {
+                before_values = this.mdws
+                    .map((mdw: Middleware) => {
+                        if (_options.before.indexOf(mdw.name) !== -1) {
+                            _options.before = _options.before.filter((elem: string) => elem !== mdw.name);
+                            return mdw.weight;
+                        } else {
+                            return NaN;
+                        }
+                    })
+                    .filter((val: number) =>
+                        (!!val))
+                    .sort((a: number, b: number) => b - a);
+                if (_options.before.length !== 0) {
+                    throw new Error(`Unable to find following middlewares ${JSON.stringify(_options.before)}`);
+                }
+            }
+
+            if (_options.after) {
+                after_values = this.mdws
+                    .map((mdw: Middleware) => {
+                        if (_options.after.indexOf(mdw.name) !== -1) {
+                            _options.after = _options.after.filter((elem: string) => elem !== mdw.name);
+                            return mdw.weight;
+                        } else {
+                            return NaN;
+                        }
+                    })
+                    .filter((val: number) =>
+                        (!!val))
+                    .sort((a: number, b: number) => b - a);
+                if (_options.after.length !== 0) {
+                    throw new Error(`Unable to find following middlewares ${JSON.stringify(_options.after)}`);
+                }
+            }
+
+            if ((before_values && after_values)
+                && (before_values[0] > after_values[0] || after_values[0] - 1 === before_values[0])) throw new Error(`Invalid before/after configuration => before ${before_values[0]} and after ${after_values[0]}`);
+
+            if (before_values && after_values) _options.weight = Math.floor(after_values[0] + (before_values[0] - after_values[0]) / 2);
+            else if (before_values) _options.weight = before_values[0] + 1;
+            else if (after_values) _options.weight = after_values[0] - 1;
+
+        }
+
         const mdw = new Middleware<DataType, EnvType, ConfigType>(_name, _mdw, this.event, _options);
 
         this.mdws.push(mdw);

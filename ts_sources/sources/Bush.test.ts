@@ -121,7 +121,7 @@ const interrupt_mdw: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env:
 class WorkingPlugin implements IBushPlugin {
 
     public name: string;
-    private done: Done;
+    private readonly done: Done;
 
     public constructor(_name: string, done: Done) {
         this.name = _name;
@@ -129,7 +129,10 @@ class WorkingPlugin implements IBushPlugin {
     }
 
     public inject(bush: Bush): void {
-        this.done();
+        bush.addReceiveMiddleware(this.name + ':interrupt_mdw', interrupt_mdw);
+        setTimeout(() => {
+            this.done();
+        }, 1000);
     }
 }
 
@@ -707,6 +710,17 @@ describe('Bush Test Suite', () => {
             if (bush.Env.this.is.going.too.deep.data !== 'yes' || bush.Env.this.is.going.too.deep.another_data !== 'yes yes' || bush.Env.this.is.going.too.deep.testing !== 'test') throw new Error('Invalid Env after addEnv');
         });
 
+        test('Pushing data in env', () => {
+            const bush_event = new EventEmitter();
+            const bush_env = {};
+
+            bush = new Bush({event: bush_event, env: bush_env});
+            bush.pushEnv('this.is.going.too.deep', 'hi');
+            bush.pushEnv('this.is.going.too.deep', 'bye');
+
+            if (bush.Env.this.is.going.too.deep[0] !== 'hi' || bush.Env.this.is.going.too.deep[1] !== 'bye') throw new Error('Invalid Env after pushEnv');
+        });
+
         test('Removing data in env', () => {
             const bush_event = new EventEmitter();
             const bush_env = {};
@@ -759,6 +773,17 @@ describe('Bush Test Suite', () => {
             bush.addConfig('this.is.going.not.too.deep', {testing: 'test'});
 
             if (bush.Config.this.is.going.too.deep.data !== 'yes' || bush.Config.this.is.going.too.deep.another_data !== 'yes yes' || bush.Config.this.is.going.too.deep.testing !== 'test') throw new Error('Invalid Config after addConfig');
+        });
+
+        test('Pushing data in config', () => {
+            const bush_event = new EventEmitter();
+            const bush_env = {};
+
+            bush = new Bush({event: bush_event, env: bush_env});
+            bush.pushConfig('this.is.going.too.deep', 'hi');
+            bush.pushConfig('this.is.going.too.deep', 'bye');
+
+            if (bush.Config.this.is.going.too.deep[0] !== 'hi' || bush.Config.this.is.going.too.deep[1] !== 'bye') throw new Error('Invalid Config after pushConfig');
         });
 
         test('Removing data in config', () => {

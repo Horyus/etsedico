@@ -137,6 +137,106 @@ describe('MiddlewareChain Test Suite', () => {
         }
     });
 
+    test('Try correct before configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('middleware_name4', string_any_middleware, {weight: 11, config: string_config});
+        mdwc.addMiddleware('middleware_name6', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('middleware_name5', string_any_middleware, {config: string_config, before: ['middleware_name6']});
+        if (mdwc.getMiddlewareList()[1] !== '<middleware_name5 11>') done(new Error('Invalid Middleware Weight'));
+        done();
+    });
+
+    test('Try correct multi before configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('multi_before_name4', string_any_middleware, {weight: -10, config: string_config});
+        mdwc.addMiddleware('multi_before_name6', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('multi_before_name5', string_any_middleware, {config: string_config, before: ['multi_before_name6', 'multi_before_name4']});
+        if (mdwc.getMiddlewareList()[0] !== '<multi_before_name5 11>') done(new Error('Invalid Middleware Weight'));
+        done();
+    });
+
+    test('Try incorrect before configuration', async (done: Done) => {
+        try {
+            mdwc = new MiddlewareChain(event, env);
+            mdwc.addMiddleware('invalid_middleware6', string_any_middleware, {config: string_config, before: ['middleware_name6']});
+            done(new Error('Should throw'));
+        } catch (e) {
+            done();
+        }
+    });
+
+    test('Try correct after configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('middleware_namee4', string_any_middleware, {weight: 9, config: string_config});
+        mdwc.addMiddleware('middleware_namee6', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('middleware_namee5', string_any_middleware, {config: string_config, after: ['middleware_namee6']});
+        if (mdwc.getMiddlewareList()[2] !== '<middleware_namee5 9>') done(new Error('Invalid Middleware Weight'));
+        done();
+    });
+
+    test('Try correct multi after configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('multi_after_namee4', string_any_middleware, {weight: -10, config: string_config});
+        mdwc.addMiddleware('multi_after_namee6', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('multi_after_namee5', string_any_middleware, {config: string_config, after: ['multi_after_namee6', 'multi_after_namee4']});
+        if (mdwc.getMiddlewareList()[1] !== '<multi_after_namee5 9>') done(new Error('Invalid Middleware Weight'));
+        done();
+    });
+
+    test('Try incorrect after configuration', async (done: Done) => {
+        try {
+            mdwc = new MiddlewareChain(event, env);
+            mdwc.addMiddleware('invalid_middleware5', string_any_middleware, {
+                config: string_config,
+                after: ['middleware_namee6']
+            });
+            done(new Error('Should throw'));
+        } catch (e) {
+            done();
+        }
+    });
+
+    test('Try correct before/after configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('middleware_name7', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('middleware_name8', string_any_middleware, {weight: -10, config: string_config});
+        mdwc.addMiddleware('middleware_name9', string_any_middleware, {config: string_config, after: ['middleware_name7'], before: ['middleware_name8']});
+        if (mdwc.getMiddlewareList()[1] !== '<middleware_name9 0>') done(new Error('Invalid Middleware Weight'));
+        done();
+    });
+
+    test('Try incorrect before/after configuration', async (done: Done) => {
+        try {
+            mdwc = new MiddlewareChain(event, env);
+            mdwc.addMiddleware('middleware_name10', string_any_middleware, {weight: -10, config: string_config});
+            mdwc.addMiddleware('middleware_name11', string_any_middleware, {weight: 10, config: string_config});
+            mdwc.addMiddleware('middleware_name12', string_any_middleware, {
+                config: string_config,
+                after: ['middleware_name10'],
+                before: ['middleware_name11']
+            });
+            done(new Error('Should throw'));
+        } catch (e) {
+            done();
+        }
+    });
+
+    test('Try incorrect before/after configuration', async (done: Done) => {
+        try {
+            mdwc = new MiddlewareChain(event, env);
+            mdwc.addMiddleware('middleware_name13', string_any_middleware, {weight: 1, config: string_config});
+            mdwc.addMiddleware('middleware_name14', string_any_middleware, {weight: 2, config: string_config});
+            mdwc.addMiddleware('middleware_name15', string_any_middleware, {
+                config: string_config,
+                after: ['middleware_name13'],
+                before: ['middleware_name14']
+            });
+            done(new Error('Should throw'));
+        } catch (e) {
+            done();
+        }
+    });
+
     test('Run middlewares with interuption', async (done: Done) => {
         try {
             mdwc = new MiddlewareChain(event, env);
