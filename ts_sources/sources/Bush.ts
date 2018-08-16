@@ -588,18 +588,26 @@ export class Bush {
 
     private async _configure(): Promise<void> {
         await this.pre_send_mdw.configure(this.config);
+        if (!this.pre_send_mdw.resolved) throw new Error(`Missing dependencies in pre_send ${JSON.stringify(this.pre_send_mdw.missing_dependencies)}`);
         await this.post_send_mdw.configure(this.config);
+        if (!this.post_send_mdw.resolved) throw new Error(`Missing dependencies in post_send ${JSON.stringify(this.post_send_mdw.missing_dependencies)}`);
 
         await this.receive_mdw.configure(this.config);
+        if (!this.receive_mdw.resolved) throw new Error(`Missing dependencies in receive ${JSON.stringify(this.receive_mdw.missing_dependencies)}`);
 
         await this.any_mdw.configure(this.config);
+        if (!this.any_mdw.resolved) throw new Error(`Missing dependencies in any ${JSON.stringify(this.any_mdw.missing_dependencies)}`);
 
         await this.listen_mdw.configure(this.config);
+        if (!this.listen_mdw.resolved) throw new Error(`Missing dependencies in listen ${JSON.stringify(this.listen_mdw.missing_dependencies)}`);
 
         await this.pre_bind_mdw.configure(this.config);
+        if (!this.pre_bind_mdw.resolved) throw new Error(`Missing dependencies in pre_bind ${JSON.stringify(this.pre_bind_mdw.missing_dependencies)}`);
         await this.post_bind_mdw.configure(this.config);
+        if (!this.post_bind_mdw.resolved) throw new Error(`Missing dependencies in post_bind ${JSON.stringify(this.post_bind_mdw.missing_dependencies)}`);
 
         await this.error_mdw.configure(this.config);
+        if (!this.error_mdw.resolved) throw new Error(`Missing dependencies in error ${JSON.stringify(this.error_mdw.missing_dependencies)}`);
     }
 
     private _plug(): void {

@@ -13,7 +13,7 @@ export interface MiddlewareOptions<ConfigType = any> {
     config?: MiddlewareConfig<ConfigType>;
     before?: string[];
     after?: string[];
-    waitlist?: boolean;
+    requires?: string[];
 }
 
 /**

@@ -156,13 +156,10 @@ describe('MiddlewareChain Test Suite', () => {
     });
 
     test('Try incorrect before configuration', async (done: Done) => {
-        try {
-            mdwc = new MiddlewareChain(event, env);
-            mdwc.addMiddleware('invalid_middleware6', string_any_middleware, {config: string_config, before: ['middleware_name6']});
-            done(new Error('Should throw'));
-        } catch (e) {
-            done();
-        }
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('invalid_middleware6', string_any_middleware, {config: string_config, before: ['middleware_name6']});
+        if (mdwc.resolved) done(new Error('Should not be resolved'));
+        done();
     });
 
     test('Try correct after configuration', async (done: Done) => {
@@ -183,17 +180,40 @@ describe('MiddlewareChain Test Suite', () => {
         done();
     });
 
+    test('Try correct requires configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('require_name6', string_any_middleware, {
+            config: string_config
+        });
+        mdwc.addMiddleware('require_name5', string_any_middleware, {
+            config: string_config,
+            requires: ['require_name6']
+        });
+        if (!mdwc.resolved) done(new Error('Should be resolved'));
+        done();
+    });
+
+    test('Try incorrect requires configuration', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('require_name7', string_any_middleware, {
+            config: string_config
+        });
+        mdwc.addMiddleware('require_name8', string_any_middleware, {
+            config: string_config,
+            requires: ['require_name9']
+        });
+        if (mdwc.resolved) done(new Error('Should not be resolved'));
+        done();
+    });
+
     test('Try incorrect after configuration', async (done: Done) => {
-        try {
-            mdwc = new MiddlewareChain(event, env);
-            mdwc.addMiddleware('invalid_middleware5', string_any_middleware, {
-                config: string_config,
-                after: ['middleware_namee6']
-            });
-            done(new Error('Should throw'));
-        } catch (e) {
-            done();
-        }
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('invalid_middleware5', string_any_middleware, {
+            config: string_config,
+            after: ['middleware_namee6']
+        });
+        if (mdwc.resolved) done(new Error('Should not be resolved'));
+        done();
     });
 
     test('Try correct before/after configuration', async (done: Done) => {

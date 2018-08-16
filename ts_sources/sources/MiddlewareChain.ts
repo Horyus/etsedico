@@ -136,6 +136,39 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
     }
 
     /**
+     * Returns true if all middlewares are resolved.
+     */
+    public get resolved(): boolean {
+        return !this.waitlist_mdws.length;
+    }
+
+    /**
+     * Return array with unmet dependecies from the middlewares.
+     */
+    public get missing_dependencies(): string[] {
+        let ret = [];
+        const missing = this.waitlist_mdws
+            .map((elem: MiddlewareWaitlist<DataType, EnvType, ConfigType>) => {
+                let out: string[] = [];
+                if (elem.options.requires) out = out.concat(elem.options.requires);
+                if (elem.options.before) out = out.concat(elem.options.before);
+                if (elem.options.after) out = out.concat(elem.options.after);
+                out.filter((elem: string) => {
+                    let found = false;
+                    for (const mdw of this.mdws) {
+                        if (mdw.name === elem) found = true;
+                    }
+                    return !found;
+                });
+                return out;
+            });
+        for (const miss_array of missing) {
+            ret = ret.concat(miss_array);
+        }
+        return ret;
+    }
+
+    /**
      * Used to resolve all dependencies of middlewares into the waitlist
      */
     public resolveWaitlist(): void {
@@ -145,6 +178,17 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
             for (const mdw_info of this.waitlist_mdws) {
 
                 let skip = false;
+
+                if (mdw_info.options.requires) {
+                    for (const requires of mdw_info.options.requires) {
+                        let found = false;
+                        for (const mdw of this.mdws) {
+                            if (mdw.name === requires) found = true;
+                        }
+                        if (!found) skip = true;
+                    }
+                }
+
                 if (mdw_info.options.before) {
                     for (const before of mdw_info.options.before) {
                         let found = false;
@@ -166,7 +210,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
                 }
 
                 if (!skip) {
-                    this.addMiddleware(mdw_info.name, mdw_info.mdw, {...mdw_info.options, waitlist: false});
+                    this.addMiddleware(mdw_info.name, mdw_info.mdw, {...mdw_info.options, requires: undefined});
                     this.waitlist_mdws = this.waitlist_mdws.filter((elem: MiddlewareWaitlist<DataType, EnvType, ConfigType>) => elem.name !== mdw_info.name);
                 } else {
                     ++unresolved;
@@ -187,12 +231,16 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
         if (MiddlewareChain.name_registry[_name]) throw new Error('Middleware name already in use ' + _name);
 
         if (_options) {
-            if (_options.waitlist) {
-                this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
-                return ;
-            }
             let before_values;
             let after_values;
+
+            if (_options.requires) {
+                this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
+                try {
+                    this.resolveWaitlist();
+                } catch (e) {}
+                return ;
+            }
 
             if (_options.before) {
                 before_values = this.mdws
@@ -208,7 +256,8 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
                         (!!val))
                     .sort((a: number, b: number) => b - a);
                 if (_options.before.length !== 0) {
-                    throw new Error(`Unable to find following middlewares ${JSON.stringify(_options.before)}`);
+                    this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
+                    return ;
                 }
             }
 
@@ -226,7 +275,8 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
                         (!!val))
                     .sort((a: number, b: number) => b - a);
                 if (_options.after.length !== 0) {
-                    throw new Error(`Unable to find following middlewares ${JSON.stringify(_options.after)}`);
+                    this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
+                    return ;
                 }
             }
 
@@ -244,6 +294,9 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
         this.mdws.push(mdw);
         this.mdws.sort((mdw_one: Middleware<DataType, EnvType, ConfigType>, mdw_two: Middleware<DataType, EnvType, ConfigType>): number => (-(mdw_one.weight - mdw_two.weight)));
         MiddlewareChain.name_registry[_name] = true;
+        try {
+            this.resolveWaitlist();
+        } catch (e) {}
     }
 
     /**
