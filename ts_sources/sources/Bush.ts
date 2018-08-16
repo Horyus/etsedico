@@ -1,8 +1,6 @@
-import * as UTP                                                from 'utp-punch';
-import * as Socket                                             from 'utp-punch/connection';
+import * as UDP from 'dgram';
 import { MiddlewareChain }                                     from './MiddlewareChain';
 import { EventEmitter, MiddlewareFunction, MiddlewareOptions } from './Middleware';
-import { ConnectionInfos, Signature }                          from './ConnectionInfos';
 import { PathNamingRegex }                                     from './Utils';
 import { IBushPlugin }                                         from './IBushPlugin';
 
@@ -26,7 +24,8 @@ export interface BushOptions {
  * DataType for the Pre-Send {@link MiddlewareChain} instance.
  */
 export interface PreSendDT {
-    signature?: Signature;
+    ip?: string;
+    port?: number;
     data?: Buffer[];
 }
 
@@ -34,7 +33,8 @@ export interface PreSendDT {
  * DataType for the Post-Send {@link MiddlewareChain} instance.
  */
 export interface PostSendDT {
-    signature?: Signature;
+    ip?: string;
+    port?: number;
     data?: Buffer[];
 }
 
@@ -42,7 +42,7 @@ export interface PostSendDT {
  * DataType for the Receive {@link MiddlewareChain} instance.
  */
 export interface ReceiveDT {
-    signature?: Signature;
+    info?: any;
     data?: Buffer;
     __interrupt_signal?: Boolean;
 }
@@ -58,12 +58,7 @@ export interface AnyDT {
 /**
  * DataType for the Pre-Listen {@link MiddlewareChain} instance.
  */
-export type PreListenDT = void;
-
-/**
- * DataType for the Post-Listen {@link MiddlewareChain} instance.
- */
-export type PostListenDT = void;
+export type ListenDT = void;
 
 /**
  * DataType for the Pre-Bind {@link MiddlewareChain} instance.
@@ -82,52 +77,14 @@ export interface PostBindDT {
 }
 
 /**
- * DataType for the New Connection {@link MiddlewareChain} instance.
+ * DataType for the Error {@link MiddlewareChain} instance.
  */
-export interface NewConnectionDT {
-    connection?: ConnectionInfos;
-}
-
-/**
- * DataType for the New Disconnection {@link MiddlewareChain} instance.
- */
-export interface NewDisconnectionDT {
-    signature?: Signature;
-}
-
-/**
- * DataType for the Post-Connect {@link MiddlewareChain} instance.
- */
-export interface PostConnectDT {
-    ip?: string;
-    port?: number;
-}
-
-/**
- * DataType for the Pre-Connect {@link MiddlewareChain} instance.
- */
-export interface PreConnectDT {
-    ip?: string;
-    port?: number;
-}
-
-/**
- * DataType for the Post-Disconnect {@link MiddlewareChain} instance.
- */
-export interface PostDisconnectDT {
-    signature?: Signature;
-}
-
-/**
- * DataType for the Pre-Disconnect {@link MiddlewareChain} instance.
- */
-export interface PreDisconnectDT {
-    signature?: Signature;
+export interface ErrorDT {
+    error?: Error;
 }
 
 /**
  * Interface returned when requesting a {@link Bush.getMiddlewareSummary}
- *
  */
 export interface MiddlewareSummay {
     [key: string]: string[];
@@ -139,16 +96,9 @@ export interface MiddlewareSummay {
 export type OnMessageFunction<CustomDataType extends ReceiveDT = ReceiveDT> = (data: CustomDataType) => void;
 
 /**
- * Interface used to store all the connections
- */
-export interface ConnectionStore {
-    [key: string]: ConnectionInfos;
-}
-
-/**
- * Bidirectional UTP Socket Handler. Uses the UTP-Punch implementation of the UTP protocol and wrap every method and
+ * Bidirectional UDP Socket Handler. Uses the UTP-Punch implementation of the UTP protocol and wrap every method and
  * logic around async methods and {@link MiddlewareChain} instances.
- * Logic is that the UTP Socket is used both as Server and Client and is able to connect or to receive connections.
+ * Logic is that the UDP Socket is used both as Server and Client and is able to connect or to receive connections.
  *
  * ```typescript
  *
@@ -163,16 +113,11 @@ export interface ConnectionStore {
 export class Bush {
 
     /**
-     * UTP Socket. Can be used both as Server and Client. Ability to Punch.
+     * UDP Socket. Can be used both as Server and Client. Ability to Punch.
      *
      * TODO: remove when needed as cannot instanciate in constructor.
      */
-    private utp: UTP;
-
-    /**
-     * Store all the live connections
-     */
-    public readonly connections: ConnectionStore = {};
+    private udp: UDP.Socket;
 
     /**
      * Event Emitter available in all {@link Middleware} instances.
@@ -196,27 +141,19 @@ export class Bush {
 
     private readonly any_mdw: MiddlewareChain<AnyDT, Env>;
 
-    private readonly pre_listen_mdw: MiddlewareChain<PreListenDT, Env>;
-    private readonly post_listen_mdw: MiddlewareChain<PostListenDT, Env>;
+    private readonly listen_mdw: MiddlewareChain<ListenDT, Env>;
 
     private readonly pre_bind_mdw: MiddlewareChain<PreBindDT, Env>;
     private readonly post_bind_mdw: MiddlewareChain<PostBindDT, Env>;
 
-    private readonly new_connection_mdw: MiddlewareChain<NewConnectionDT, Env>;
-    private readonly new_disconnection_mdw: MiddlewareChain<NewDisconnectionDT, Env>;
-
-    private readonly pre_connect_mdw: MiddlewareChain<PreConnectDT, Env>;
-    private readonly post_connect_mdw: MiddlewareChain<PostConnectDT, Env>;
-
-    private readonly pre_disconnect_mdw: MiddlewareChain<PreDisconnectDT, Env>;
-    private readonly post_disconnect_mdw: MiddlewareChain<PostDisconnectDT, Env>;
+    private readonly error_mdw: MiddlewareChain<ErrorDT, Env>;
 
     private readonly message_callbacks: OnMessageFunction[] = [];
 
     private readonly plugins: IBushPlugin[] = [];
 
     /**
-     * Create an instance of Bush - Bidirectional UTP Socket Handler
+     * Create an instance of Bush - Bidirectional UDP Socket Handler
      *
      * @param {BushOptions} _options
      */
@@ -231,51 +168,41 @@ export class Bush {
 
         this.any_mdw = new MiddlewareChain<AnyDT, Env>(this.event, this.env);
 
-        this.pre_listen_mdw = new MiddlewareChain<PreListenDT, Env>(this.event, this.env);
-        this.post_listen_mdw = new MiddlewareChain<PostListenDT, Env>(this.event, this.env);
+        this.listen_mdw = new MiddlewareChain<ListenDT, Env>(this.event, this.env);
 
         this.pre_bind_mdw = new MiddlewareChain<PreBindDT, Env>(this.event, this.env);
         this.post_bind_mdw = new MiddlewareChain<PostBindDT, Env>(this.event, this.env);
 
-        this.new_connection_mdw = new MiddlewareChain<NewConnectionDT, Env>(this.event, this.env);
-        this.new_disconnection_mdw = new MiddlewareChain<NewDisconnectionDT, Env>(this.event, this.env);
-
-        this.post_connect_mdw = new MiddlewareChain<PostConnectDT, Env>(this.event, this.env);
-        this.pre_connect_mdw = new MiddlewareChain<PreConnectDT, Env>(this.event, this.env);
-
-        this.post_disconnect_mdw = new MiddlewareChain<PostDisconnectDT, Env>(this.event, this.env);
-        this.pre_disconnect_mdw = new MiddlewareChain<PreDisconnectDT, Env>(this.event, this.env);
+        this.error_mdw = new MiddlewareChain<ErrorDT, Env>(this.event, this.env);
     }
 
     /**
-     * Start the socket. Binds it. Listen.
+     * Start the socket.
      */
     public async start(): Promise<void> {
         this._plug();
         await this._configure();
-        this.utp = new UTP(async (socket: any): Promise<void> => {
-            const infos = new ConnectionInfos(socket, true);
-            const signature = infos.getUniqueSignature();
-            socket.on('data', async (data: Buffer): Promise<void> => {
-                const result = await this.receive_mdw.run({signature: signature, data: data});
-                if (result.__interrupt_signal) return ;
-                this.event.emit('core:receive', result);
-                for (const callback of this.message_callbacks) {
-                    callback(result);
-                }
-            });
+        this.udp = UDP.createSocket('udp4');
 
-            socket.on('end', async (): Promise<void> => {
-                await this.new_disconnection_mdw.run({signature});
-                await this.any_mdw.run({action: 'new_disconnection', payload: {signature}});
-                if (this.connections[signature]) this._disconnect(signature);
-            });
-
-            this.connections[signature] = infos;
-            this.event.emit('core:connect', infos);
-            await this.new_connection_mdw.run({connection: infos});
-            await this.any_mdw.run({action: 'new_connection', payload: infos});
+        this.udp.on('listening', async () => {
+            await this.any_mdw.run({action: 'listen', payload: undefined});
+            await this.listen_mdw.run(void 0);
+            this.event.emit('core:listen');
         });
+
+        this.udp.on('message', async (msg: Buffer, rinfo: any) => {
+            const treated = await this.receive_mdw.run({data: msg, info: rinfo});
+            if (treated.__interrupt_signal) return ;
+            this.event.emit('core:receive');
+            for (const callback of this.message_callbacks) {
+                callback(treated);
+            }
+        });
+
+        this.udp.on('error', async (error: Error) => {
+            await this.error_mdw.run({error});
+        });
+
     }
 
     /**
@@ -290,20 +217,12 @@ export class Bush {
 
         ret['any_mdw'] = this.any_mdw.getMiddlewareList();
 
-        ret['pre_listen_mdw'] = this.pre_listen_mdw.getMiddlewareList();
-        ret['post_listen_mdw'] = this.post_listen_mdw.getMiddlewareList();
+        ret['listen_mdw'] = this.listen_mdw.getMiddlewareList();
 
         ret['pre_bind_mdw'] = this.pre_bind_mdw.getMiddlewareList();
         ret['post_bind_mdw'] = this.post_bind_mdw.getMiddlewareList();
 
-        ret['new_connection_mdw'] = this.new_connection_mdw.getMiddlewareList();
-        ret['new_disconnection_mdw'] = this.new_disconnection_mdw.getMiddlewareList();
-
-        ret['pre_connect_mdw'] = this.pre_connect_mdw.getMiddlewareList();
-        ret['post_connect_mdw'] = this.post_connect_mdw.getMiddlewareList();
-
-        ret['pre_disconnect_mdw'] = this.pre_disconnect_mdw.getMiddlewareList();
-        ret['post_disconnect_mdw'] = this.post_disconnect_mdw.getMiddlewareList();
+        ret['error_mdw'] = this.post_bind_mdw.getMiddlewareList();
 
         return ret;
     }
@@ -361,29 +280,16 @@ export class Bush {
     }
 
     /**
-     * Add {@link Middleware} to `pre_listen_mdw` {@link MiddlewareChain}. These arguments are forwarded to
+     * Add {@link Middleware} to `listen_mdw` {@link MiddlewareChain}. These arguments are forwarded to
      * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called before listen method is called.
+     * These {@link Middleware} instances are called after the listening event is triggered.
      *
      * @param {string} _name
      * @param {MiddlewareFunction} _mdw_func
      * @param {MiddlewareOptions} _options
      */
-    public addPreListenMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PreListenDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PreListenDT, Env, ConfigType>('pre_listen', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `post_listen_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called after listen method is called.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addPostListenMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PostListenDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PostListenDT, Env, ConfigType>('post_listen', _name, _mdw_func, _options);
+    public addListenMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<ListenDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
+        this._add_mdw<ListenDT, Env, ConfigType>('listen', _name, _mdw_func, _options);
     }
 
     /**
@@ -413,104 +319,31 @@ export class Bush {
     }
 
     /**
-     * Add {@link Middleware} to `new_connection_mdw` {@link MiddlewareChain}. These arguments are forwarded to
+     * Add {@link Middleware} to `error_mdw` {@link MiddlewareChain}. These arguments are forwarded to
      * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called after a new connection is established.
+     * These {@link Middleware} instances are called after any error from the udp socket.
      *
      * @param {string} _name
      * @param {MiddlewareFunction} _mdw_func
      * @param {MiddlewareOptions} _options
      */
-    public addNewConnectionMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<NewConnectionDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<NewConnectionDT, Env, ConfigType>('new_connection', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `new_disconnection_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called after a new disconnection occurs.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addNewDisconnectionMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<NewDisconnectionDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<NewDisconnectionDT, Env, ConfigType>('new_disconnection', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `pre_connect_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called before the connect method is called.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addPreConnectMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PreConnectDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PreConnectDT, Env, ConfigType>('pre_connect', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `post_connect_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called before the connect method is called.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addPostConnectMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PostConnectDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PostConnectDT, Env, ConfigType>('post_connect', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `pre_disconnect_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called before the disconnect method is called.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addPreDisconnectMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PreDisconnectDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PreDisconnectDT, Env, ConfigType>('pre_disconnect', _name, _mdw_func, _options);
-    }
-
-    /**
-     * Add {@link Middleware} to `post_disconnect_mdw` {@link MiddlewareChain}. These arguments are forwarded to
-     * the addMiddleware method of the {@link MiddlewareChain}.
-     * These {@link Middleware} instances are called before the disconnect method is called.
-     *
-     * @param {string} _name
-     * @param {MiddlewareFunction} _mdw_func
-     * @param {MiddlewareOptions} _options
-     */
-    public addPostDisconnectMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<PostDisconnectDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
-        this._add_mdw<PostDisconnectDT, Env, ConfigType>('post_disconnect', _name, _mdw_func, _options);
-    }
-
-    private _add_mdw<DataType = any, EnvType = any, ConfigType = any>(_where: string, _name: string, _mdw_func: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
-
-        _where = _where + '_mdw';
-
-        if (!this[_where]) throw new Error(`Invalid middleware addition. No such MiddlewareChain '${_where}'`);
-
-        (<MiddlewareChain<DataType, EnvType, ConfigType>> this[_where]).addMiddleware(_name, _mdw_func, _options);
+    public addErrorMiddleware<ConfigType = any>(_name: string, _mdw_func: MiddlewareFunction<ErrorDT, Env>, _options?: MiddlewareOptions<ConfigType>): void {
+        this._add_mdw<ErrorDT, Env, ConfigType>('error', _name, _mdw_func, _options);
     }
 
     /**
      * Send method. You can give any argument as long as it extends the {@link PreSendDT} interface.
      * This allows you to add information and data you want to transmit to your {@link Middleware} instances.
      * Pipeline: send -> pre_send_mdw -> _send -> post_send_mdw
+     *
      * @param payload
      */
     public async send<CustomDataType extends PreSendDT = PreSendDT>(payload: CustomDataType): Promise<PostSendDT> {
         await this.any_mdw.run({action: 'pre_send', payload});
         const result = await this.pre_send_mdw.run(payload);
-        if (!result || !result.data || !result.signature) throw new Error(`Invalid Payload after pre_send Middleware Chain`);
+        if (!result || !result.data || !result.ip || !result.port) throw new Error(`Invalid Payload after pre_send Middleware Chain`);
         for (const buffer of result.data) {
-            this._send(result.signature, buffer);
+            await this._send(result.ip, result.port, buffer);
         }
         this.event.emit('core:send', result);
         await this.any_mdw.run({action: 'post_send', payload: result});
@@ -518,69 +351,27 @@ export class Bush {
     }
 
     /**
-     * Connect method. You can give any argument as long as it extends the {@link PreConnectDT} interface.
-     * This allows you to add information and data you want to transmit to your {@link Middleware} instances.
-     * Pipeline: connect -> pre_connect_mdw -> _connect -> post_connect_mdw
-     * @param payload
-     */
-    public async connect<CustomDataType extends PreConnectDT = PreConnectDT>(payload: CustomDataType): Promise<PostConnectDT> {
-        await this.any_mdw.run({action: 'pre_connect', payload});
-        const result = await this.pre_connect_mdw.run(payload);
-        if (!result || !result.ip || !result.port) throw new Error('Invalid Payload after pre_connect MiddlewareChain');
-        await this._connect(result.ip, result.port);
-        await this.any_mdw.run({action: 'post_connect', payload: result});
-        return await this.post_connect_mdw.run(result);
-    }
-
-    /**
-     * Disconnect method. You can give any argument as long as it extends the {@link PreDisconnectDT} interface.
-     * This allows you to add information and data you want to transmit to your {@link Middleware} instances.
-     * Pipeline: disconnect -> pre_disconnect_mdw -> _disconnect -> post_disconnect_mdw
-     * @param payload
-     */
-    public async disconnect<CustomDataType extends PreDisconnectDT = PreDisconnectDT>(payload: CustomDataType): Promise<PostDisconnectDT> {
-        await this.any_mdw.run({action: 'pre_disconnect', payload});
-        const result = await this.pre_disconnect_mdw.run(payload);
-        if (!result || !result.signature) throw new Error('Invalid Payload after pre_disconnect Middleware Chain');
-        this._disconnect(result.signature);
-        await this.any_mdw.run({action: 'post_disconnect', payload: result});
-        return await this.post_disconnect_mdw.run(result);
-    }
-
-    /**
      * Bind method. You can give any argument as long as it extends the {@link PreBindDT} interface.
      * This allows you to add information and data you want to transmit to your {@link Middleware} instances.
      * Pipeline: bind -> pre_bind_mdw -> _bind -> post_bind_mdw
+     *
      * @param payload
      */
     public async bind<CustomDataType extends PreBindDT = PreBindDT>(payload: CustomDataType): Promise <PostBindDT> {
         await this.any_mdw.run({action: 'pre_bind', payload});
         const result = await this.pre_bind_mdw.run(payload);
         if (!result || !result.ip || !result.port) throw new Error('Invalid Payload after pre_bind Middleware Chain');
-        this._bind(result.ip, result.port);
+        await this._bind(result.ip, result.port);
         this.event.emit('core:bind', result);
         await this.any_mdw.run({action: 'post_bind', payload: result});
         return await this.post_bind_mdw.run(result);
     }
 
     /**
-     * Listen method. You can give any argument as long as it extends the {@link PreListenDT} interface.
-     * This allows you to add information and data you want to transmit to your {@link Middleware} instances.
-     * Pipeline: listen -> pre_listen_mdw -> _listen -> post_listen_mdw
-     * @param payload
-     */
-    public async listen<CustomDataType extends PreListenDT = PreListenDT>(payload: CustomDataType): Promise<PostListenDT> {
-        await this.any_mdw.run({action: 'pre_listen', payload: undefined});
-        await this.pre_listen_mdw.run(undefined);
-        await this._listen();
-        await this.any_mdw.run({action: 'post_listen', payload: undefined});
-        await this.post_listen_mdw.run(undefined);
-    }
-
-    /**
      * onMessage callback. The argument must be a callback triggered a the end of the receive_mdw chain.
      * Pipeline: *receive data* -> receive_mdw -> _cb
-     * @param _cb
+     *
+     * @param {OnMessageFunction} _cb
      */
     public onMessage<CustomDataType extends ReceiveDT = ReceiveDT>(_cb: OnMessageFunction<CustomDataType>): void {
         this.message_callbacks.push(_cb);
@@ -702,22 +493,21 @@ export class Bush {
     }
 
     /**
-     * Returns the connection linked to the provided signature
-     *
-     * @param {Signature} signature
-     * @returns {ConnectionInfos}
-     */
-    public getConnection(signature: Signature): ConnectionInfos {
-        return this.connections[signature];
-    }
-
-    /**
      * Add plugin to plugin list. Inject happens only when start is called.
      *
      * @param {IBushPlugin} plugin Class implementing the IBushPlugin interface.
      */
     public plug(plugin: IBushPlugin): void {
         this.plugins.push(plugin);
+    }
+
+    private _add_mdw<DataType = any, EnvType = any, ConfigType = any>(_where: string, _name: string, _mdw_func: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
+
+        _where = _where + '_mdw';
+
+        if (!this[_where]) throw new Error(`Invalid middleware addition. No such MiddlewareChain '${_where}'`);
+
+        (<MiddlewareChain<DataType, EnvType, ConfigType>> this[_where]).addMiddleware(_name, _mdw_func, _options);
     }
 
     private static _path_to_array(path: string): string[] {
@@ -728,69 +518,25 @@ export class Bush {
         return splitted;
     }
 
-    private _bind(_ip: string, _port: number): void {
-        if (!this.utp) throw new Error('UTP Socket not created');
-
-        this.utp.bind(_port, _ip);
-    }
-
-    private async _listen(): Promise<void> {
-        if (!this.utp) throw new Error('UTP Socket not created');
-
+    private async _bind(_ip: string, _port: number): Promise<void> {
         return new Promise<void>((ok: any, ko: any): void => {
-            this.utp.listen((): void => {
-                this.event.emit('core:listen');
+            if (!this.udp) return ko(new Error('UDP Socket not created'));
+
+            this.udp.bind(_port, _ip, (): void => {
                 ok();
             });
 
         });
     }
 
-    private async _connect(_ip: string, _port: number): Promise<void> {
-        if (!this.utp) throw new Error('UTP Socket not created');
-
+    private async _send(_ip: string, _port: number, _data: Buffer): Promise<void> {
         return new Promise<void>((ok: any, ko: any): void => {
-            this.utp.connect(_port, _ip, async (socket: Socket): Promise<void> => {
-                const infos = new ConnectionInfos(socket, false);
-                const signature = infos.getUniqueSignature();
-                this.connections[signature] = infos;
-                socket.on('data', async (data: Buffer): Promise<void> => {
-                    const result = await this.receive_mdw.run({signature: signature, data: data});
-                    if (result.__interrupt_signal) return ;
-                    this.event.emit('core:receive', result);
-                    for (const callback of this.message_callbacks) {
-                        callback(result);
-                    }
-                });
+            if (!this.udp) return ko(new Error('UDP Socket not created'));
 
-                socket.on('end', async (): Promise<void> => {
-                    await this.new_disconnection_mdw.run({signature});
-                    await this.any_mdw.run({action: 'new_disconnection', payload: {signature}});
-                    if (this.connections[signature]) this._disconnect(signature);
-                });
-
-                this.event.emit('core:connect', signature);
-                await this.new_connection_mdw.run({connection: infos});
-                await this.any_mdw.run({action: 'new_connection', payload: infos});
+            this.udp.send(_data, 0, _data.length, _port, _ip, () => {
                 ok();
             });
         });
-    }
-
-    private _disconnect(_signature: string): void {
-        if (!this.utp) throw new Error('UTP Socket not created');
-        if (!this.connections[_signature]) throw new Error('No user for signature ' + _signature);
-
-        this.connections[_signature].drop();
-        delete this.connections[_signature];
-        this.event.emit('core:disconnect', _signature);
-    }
-
-    private _send(_signature: string, _data: Buffer): void {
-        if (!this.utp) throw new Error('UTP Socket not created');
-        if (!this.connections[_signature]) throw new Error('No user for signature ' + _signature);
-
-        this.connections[_signature].Socket.write(_data);
     }
 
     private async _configure(): Promise<void> {
@@ -801,20 +547,12 @@ export class Bush {
 
         await this.any_mdw.configure(this.config);
 
-        await this.pre_listen_mdw.configure(this.config);
-        await this.post_listen_mdw.configure(this.config);
+        await this.listen_mdw.configure(this.config);
 
         await this.pre_bind_mdw.configure(this.config);
         await this.post_bind_mdw.configure(this.config);
 
-        await this.new_connection_mdw.configure(this.config);
-        await this.new_disconnection_mdw.configure(this.config);
-
-        await this.post_connect_mdw.configure(this.config);
-        await this.pre_connect_mdw.configure(this.config);
-
-        await this.post_disconnect_mdw.configure(this.config);
-        await this.pre_disconnect_mdw.configure(this.config);
+        await this.error_mdw.configure(this.config);
     }
 
     private _plug(): void {

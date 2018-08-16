@@ -13,14 +13,13 @@ declare var expect;
 
 import {
     AnyDT,
-    Bush,
+    Bush, ErrorDT,
     MiddlewareSummay,
     OnMessageFunction,
     PostBindDT,
-    PreBindDT,
-    PreDisconnectDT,
+    PreBindDT, PreSendDT,
     ReceiveDT
-}                      from './Bush';
+} from './Bush';
 import { IBushPlugin } from './IBushPlugin';
 
 let george;
@@ -37,6 +36,18 @@ const string_any_middleware: MiddlewareFunction<string, any> = (data: string, en
         type: MiddlewareActionTypes.Continue,
         payload: data
     } as MiddlewareActionContinue<string>);
+};
+
+let async_done: Done;
+
+// Error Middleware Functions
+
+const error_mdw: MiddlewareFunction<ErrorDT, any> = (data: ErrorDT, env: any, next: MiddlewareNext<ErrorDT>, _: MiddlewareEvent): void => {
+    async_done();
+    next({
+        type: MiddlewareActionTypes.Continue,
+        payload: data
+    } as MiddlewareActionContinue<ErrorDT>);
 };
 
 // Any Middleware Function
@@ -79,13 +90,13 @@ const ip_eraser: MiddlewareFunction<PreBindDT, any> = (data: PreBindDT, env: any
     } as MiddlewareActionContinue<PreBindDT>);
 };
 
-// Pre Disconnect Middleware Functions
+// Send Middleware Function
 
-const signature_eraser: MiddlewareFunction<PreDisconnectDT, any> = (data: PreDisconnectDT, env: any, next: MiddlewareNext<PreDisconnectDT>, _: MiddlewareEvent): void => {
+const send_broker: MiddlewareFunction<PreSendDT, any> = (data: PreSendDT, env: any, next: MiddlewareNext<PreSendDT>, _: MiddlewareEvent): void => {
     next({
         type: MiddlewareActionTypes.Continue,
-        payload: {signature: undefined} as PreDisconnectDT
-    } as MiddlewareActionContinue<PreDisconnectDT>);
+        payload: {ip: '127.0.0.1', port: -123, data: data.data}
+    } as MiddlewareActionContinue<PreSendDT>);
 };
 
 // Receive Middleware Function
@@ -93,14 +104,14 @@ const signature_eraser: MiddlewareFunction<PreDisconnectDT, any> = (data: PreDis
 const buffer_uppercase: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env: any, next: MiddlewareNext<ReceiveDT>, _: MiddlewareEvent): void => {
     next({
         type: MiddlewareActionTypes.Continue,
-        payload: {signature: data.signature, data: new Buffer(data.data.toString().toUpperCase())}
+        payload: {info: data.info, data: new Buffer(data.data.toString().toUpperCase())}
     } as MiddlewareActionContinue<ReceiveDT>);
 };
 
 const interrupt_mdw: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env: any, next: MiddlewareNext<ReceiveDT>, _: MiddlewareEvent): void => {
     next({
         type: MiddlewareActionTypes.Continue,
-        payload: {signature: data.signature, data: new Buffer(data.data.toString().toUpperCase()), __interrupt_signal: true}
+        payload: {info: data.info, data: new Buffer(data.data.toString().toUpperCase()), __interrupt_signal: true}
     } as MiddlewareActionContinue<ReceiveDT>);
 };
 
@@ -110,13 +121,15 @@ const interrupt_mdw: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env:
 class WorkingPlugin implements IBushPlugin {
 
     public name: string;
+    private done: Done;
 
-    public constructor(_name: string) {
+    public constructor(_name: string, done: Done) {
         this.name = _name;
+        this.done = done;
     }
 
     public inject(bush: Bush): void {
-        bush.addPreDisconnectMiddleware(`${this.name}_signature_eraser`, signature_eraser, {weight: 12});
+        this.done();
     }
 }
 
@@ -226,23 +239,11 @@ describe('Bush Test Suite', () => {
         });
 
         // @ts-ignore
-        test('Add middleware to pre_listen_mdw', async (done: Done) => {
+        test('Add middleware to listen_mdw', async (done: Done) => {
             try {
-                bush.addPreListenMiddleware('six', string_any_middleware, {weight: 6});
+                bush.addListenMiddleware('six', string_any_middleware, {weight: 6});
                 const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['pre_listen_mdw'].length !== 1 || summary['pre_listen_mdw'][0] !== '<six 6>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to post_listen_mdw', async (done: Done) => {
-            try {
-                bush.addPostListenMiddleware('seven', string_any_middleware, {weight: 777});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['post_listen_mdw'].length !== 1 || summary['post_listen_mdw'][0] !== '<seven 777>') return done(new Error('Invalid Summary'));
+                if (summary['listen_mdw'].length !== 1 || summary['listen_mdw'][0] !== '<six 6>') return done(new Error('Invalid Summary'));
                 done();
             } catch (e) {
                 done(e);
@@ -273,78 +274,6 @@ describe('Bush Test Suite', () => {
             }
         });
 
-        // @ts-ignore
-        test('Add middleware to new_connection_mdw', async (done: Done) => {
-            try {
-                bush.addNewConnectionMiddleware('ten', string_any_middleware, {weight: 10});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['new_connection_mdw'].length !== 1 || summary['new_connection_mdw'][0] !== '<ten 10>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to new_disconnection_mdw', async (done: Done) => {
-            try {
-                bush.addNewDisconnectionMiddleware('eleven', string_any_middleware, {weight: 11});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['new_disconnection_mdw'].length !== 1 || summary['new_disconnection_mdw'][0] !== '<eleven 11>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to pre_connect', async (done: Done) => {
-            try {
-                bush.addPreConnectMiddleware('twelve', string_any_middleware, {weight: 12});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['pre_connect_mdw'].length !== 1 || summary['pre_connect_mdw'][0] !== '<twelve 12>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to post_connect', async (done: Done) => {
-            try {
-                bush.addPostConnectMiddleware('thirteen', string_any_middleware, {weight: 13});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['post_connect_mdw'].length !== 1 || summary['post_connect_mdw'][0] !== '<thirteen 13>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to pre_disconnect', async (done: Done) => {
-            try {
-                bush.addPreDisconnectMiddleware('fourteen', string_any_middleware, {weight: 14});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['pre_disconnect_mdw'].length !== 1 || summary['pre_disconnect_mdw'][0] !== '<fourteen 14>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Add middleware to post_disconnect', async (done: Done) => {
-            try {
-                bush.addPostDisconnectMiddleware('fifteen', string_any_middleware, {weight: 15});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['post_disconnect_mdw'].length !== 1 || summary['post_disconnect_mdw'][0] !== '<fifteen 15>') return done(new Error('Invalid Summary'));
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
-
     });
 
     describe('Testing Bind Features', () => {
@@ -362,6 +291,26 @@ describe('Bush Test Suite', () => {
             } catch (e) {
                 done();
             }
+        });
+
+        // @ts-ignore
+        test('Call Bind on same port', async (done: Done) => {
+            const bush_event = new EventEmitter();
+            const bush_env = {};
+
+            bush = new Bush({event: bush_event, env: bush_env});
+
+            const george_event = new EventEmitter();
+            const george_env = {};
+
+            const george = new Bush({event: george_event, env: george_env});
+
+            await bush.start();
+            await george.start();
+            george.addErrorMiddleware('error1', error_mdw);
+            async_done = done;
+            await bush.bind({ip, port: 12345});
+            await george.bind({ip, port: 12345});
         });
 
         // @ts-ignore
@@ -439,275 +388,6 @@ describe('Bush Test Suite', () => {
 
     });
 
-    describe('Testing Listen Features', () => {
-
-        // @ts-ignore
-        test('Call listen before start call', async (done: Done) => {
-            try {
-                const bush_event = new EventEmitter();
-                const bush_env = {};
-
-                bush = new Bush({event: bush_event, env: bush_env});
-                await bush.listen();
-                done(new Error('Calling listen before calling start should throw'));
-            } catch (e) {
-                done();
-            }
-        });
-
-        // @ts-ignore
-        test('Call listen after start and bind', async (done: Done) => {
-            const bush_event = new EventEmitter();
-            const bush_env = {};
-
-            bush = new Bush({event: bush_event, env: bush_env});
-            bush_event.on('core:listen', (): void => {
-                done();
-            });
-            await bush.start();
-            await bush.bind({ip, port});
-            ++port;
-            await bush.listen();
-        });
-
-    });
-
-    describe('Testing Connect Features', () => {
-
-        // @ts-ignore
-        test('Call connect before start call', async (done: Done) => {
-            try {
-                const bush_event = new EventEmitter();
-                const bush_env = {};
-
-                bush = new Bush({event: bush_event, env: bush_env});
-                await bush.connect({ip, port: bush_port});
-                done(new Error('Calling connect before calling start should throw'));
-            } catch (e) {
-                done();
-            }
-        });
-
-        // @ts-ignore
-        test('Connecting two instances', async (done: Done) => {
-            const save_george = george_port;
-            const save_bush = bush_port;
-
-            ++george_port;
-            ++bush_port;
-
-            const george_event = new EventEmitter();
-            const bush_event = new EventEmitter();
-
-            const george_env = {};
-            const bush_env = {};
-
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
-            george = new Bush({event: george_event, env: george_env});
-            await george.start();
-            await george.bind({ip, port: save_george});
-
-            bush = new Bush({event: bush_event, env: bush_env});
-            await bush.start();
-            await bush.bind({ip, port: save_bush});
-
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        done();
-                    }
-                }, 100);
-            });
-
-            await george.listen();
-
-            await bush.connect({ip, port: save_george});
-        });
-
-        // @ts-ignore
-        test('Using ip eraser middleware', async (done: Done) => {
-            const bush_event = new EventEmitter();
-            const bush_env = {};
-
-            bush = new Bush({event: bush_event, env: bush_env});
-
-            try {
-                bush.addPreConnectMiddleware('eraser2', ip_eraser, {weight: 999});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['pre_connect_mdw'].length !== 1 || summary['pre_connect_mdw'][0] !== '<eraser2 999>') return done(new Error('Invalid Summary'));
-
-                await bush.start();
-                await bush.bind({ip, port});
-                ++port;
-                try {
-                    await bush.connect({ip, port});
-                    done(new Error('Should throw is ip or port is undefined'));
-                } catch (e) {
-                    done();
-                }
-
-            } catch (e) {
-                done(e);
-            }
-        });
-
-    });
-
-    describe('Testing Disconnect Features', () => {
-
-        // @ts-ignore
-        test('Call disconnect before start call', async (done: Done) => {
-            try {
-                const bush_event = new EventEmitter();
-                const bush_env = {};
-
-                bush = new Bush({event: bush_event, env: bush_env});
-                await bush.disconnect({signature: 'ANY'});
-                done(new Error('Calling disconnect before calling start should throw'));
-            } catch (e) {
-                done();
-            }
-        });
-
-        // @ts-ignore
-        test('Connecting two instances and disconnecting', async (done: Done) => {
-            const save_george = george_port;
-            const save_bush = bush_port;
-
-            ++george_port;
-            ++bush_port;
-
-            const george_event = new EventEmitter();
-            const bush_event = new EventEmitter();
-
-            const george_env = {};
-            const bush_env = {};
-
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
-            george = new Bush({event: george_event, env: george_env});
-            await george.start();
-            await george.bind({ip, port: save_george});
-
-            bush = new Bush({event: bush_event, env: bush_env});
-            await bush.start();
-            await bush.bind({ip, port: save_bush});
-
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.disconnect({signature: identifier});
-                    }
-                }, 100);
-            });
-
-            bush_event.on('core:disconnect', (_: string): void => {
-                done();
-            });
-
-            await george.listen();
-
-            await bush.connect({ip, port: save_george});
-        });
-
-        // @ts-ignore
-        test('Connecting two instances and disconnecting from the other one', async (done: Done) => {
-            const save_george = george_port;
-            const save_bush = bush_port;
-
-            ++george_port;
-            ++bush_port;
-
-            const george_event = new EventEmitter();
-            const bush_event = new EventEmitter();
-
-            const george_env = {};
-            const bush_env = {};
-
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
-            george = new Bush({event: george_event, env: george_env});
-            await george.start();
-            await george.bind({ip, port: save_george});
-
-            bush = new Bush({event: bush_event, env: bush_env});
-            await bush.start();
-            await bush.bind({ip, port: save_bush});
-
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        george.disconnect({signature: george_signature});
-                    }
-                }, 100);
-            });
-
-            george_event.on('core:disconnect', (_: string): void => {
-                done();
-            });
-
-            await george.listen();
-
-            await bush.connect({ip, port: save_george});
-        });
-
-        // @ts-ignore
-        test('Using signature eraser middleware', async (done: Done) => {
-            const bush_event = new EventEmitter();
-            const bush_env = {};
-
-            bush = new Bush({event: bush_event, env: bush_env});
-
-            try {
-                bush.addPreDisconnectMiddleware('eraser3', signature_eraser, {weight: 999});
-                const summary: MiddlewareSummay = bush.getMiddlewareSummary();
-                if (summary['pre_disconnect_mdw'].length !== 1 || summary['pre_disconnect_mdw'][0] !== '<eraser3 999>') return done(new Error('Invalid Summary'));
-
-                await bush.start();
-                await bush.bind({ip, port});
-                ++port;
-                try {
-                    await bush.disconnect({signature: 'ANY'});
-                    done(new Error('Should throw if end of chain is undefined'));
-                } catch (e) {
-                    done();
-                }
-
-            } catch (e) {
-                done(e);
-            }
-        });
-
-        // @ts-ignore
-        test('Disconnecting from non existing user', async (done: Done) => {
-            const bush_event = new EventEmitter();
-            const bush_env = {};
-
-            bush = new Bush({event: bush_event, env: bush_env});
-
-            try {
-                await bush.start();
-                await bush.bind({ip, port});
-                ++port;
-                try {
-                    await bush.disconnect({signature: 'ANY'});
-                    done(new Error('Should throw if trying to remove non existing user'));
-                } catch (e) {
-                    done();
-                }
-
-            } catch (e) {
-                done(e);
-            }
-        });
-
-    });
-
     describe('Testing Send Features', () => {
 
         // @ts-ignore
@@ -717,7 +397,7 @@ describe('Bush Test Suite', () => {
                 const bush_env = {};
 
                 bush = new Bush({event: bush_event, env: bush_env});
-                await bush.send({signature: 'Signature', data: [new Buffer('Data')]});
+                await bush.send({ip: '127.0.0.1', port: 1234, data: [new Buffer('Data')]});
                 done(new Error('Calling send before calling start should throw'));
             } catch (e) {
                 done();
@@ -739,7 +419,7 @@ describe('Bush Test Suite', () => {
         });
 
         // @ts-ignore
-        test('Connecting two instances and sending', async (done: Done) => {
+        test('Sending with wrong pre_mdw', async (done: Done) => {
             const save_george = george_port;
             const save_bush = bush_port;
 
@@ -752,7 +432,6 @@ describe('Bush Test Suite', () => {
             const george_env = {};
             const bush_env = {};
 
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
             george = new Bush({event: george_event, env: george_env});
             await george.start();
             await george.bind({ip, port: save_george});
@@ -762,54 +441,19 @@ describe('Bush Test Suite', () => {
             await bush.start();
             await bush.bind({ip, port: save_bush});
 
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.send({signature: identifier, data: [new Buffer('Hello')]});
-                    }
-                }, 100);
-            });
-
-            bush_event.on('core:send', (_: string): void => {
-                done();
-            });
-
-            await george.listen();
-
-            await bush.connect({ip, port: save_george});
-        });
-
-        // @ts-ignore
-        test('Send to non existing user', async (done: Done) => {
-            const bush_event = new EventEmitter();
-            const bush_env = {};
-
-            bush = new Bush({event: bush_event, env: bush_env});
+            bush.addPreSendMiddleware('broke1', send_broker);
 
             try {
-                await bush.start();
-                await bush.bind({ip, port});
-                ++port;
-                try {
-                    await bush.send({signature: 'ANY', data: [new Buffer('You ! exist')]});
-                    done(new Error('Should throw if trying to remove non existing user'));
-                } catch (e) {
-                    done();
-                }
-
+                await bush.send({ip: '127.0.0.1', port: george_port, data: [new Buffer('Hello')]});
+                done(new Error('Should throw'));
             } catch (e) {
-                done(e);
+                done();
             }
+
         });
 
-    });
-
-    describe('Testing Receive Features', () => {
-
         // @ts-ignore
-        test('Connecting two instances and sending', async (done: Done) => {
+        test('Sending', async (done: Done) => {
             const save_george = george_port;
             const save_bush = bush_port;
 
@@ -822,7 +466,41 @@ describe('Bush Test Suite', () => {
             const george_env = {};
             const bush_env = {};
 
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
+            george = new Bush({event: george_event, env: george_env});
+            await george.start();
+            await george.bind({ip, port: save_george});
+
+            bush = new Bush({event: bush_event, env: bush_env});
+
+            await bush.start();
+            await bush.bind({ip, port: save_bush});
+
+            bush_event.on('core:send', (_: string): void => {
+                done();
+            });
+
+            bush.send({ip: '127.0.0.1', port: george_port, data: [new Buffer('Hello')]});
+
+        });
+
+    });
+
+    describe('Testing Receive Features', () => {
+
+        // @ts-ignore
+        test('Sending', async (done: Done) => {
+            const save_george = george_port;
+            const save_bush = bush_port;
+
+            ++george_port;
+            ++bush_port;
+
+            const george_event = new EventEmitter();
+            const bush_event = new EventEmitter();
+
+            const george_env = {};
+            const bush_env = {};
+
             george = new Bush({event: george_event, env: george_env});
             await george.start();
             await george.bind({ip, port: save_george});
@@ -843,26 +521,16 @@ describe('Bush Test Suite', () => {
                 if (count === 2) done();
             };
 
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.send({signature: identifier, data: [new Buffer('Hello')]});
-                        george.send({signature: george_signature, data: [new Buffer('Hello too')]});
-                    }
-                }, 100);
-            });
-
             george.onMessage(george_message);
-            await george.listen();
 
             bush.onMessage(bush_message);
-            await bush.connect({ip, port: save_george});
+
+            bush.send({ip: '127.0.0.1', port: save_george, data: [new Buffer('Hello')]});
+            george.send({ip: '127.0.0.1', port: save_bush, data: [new Buffer('Hello too')]});
         });
 
         // @ts-ignore
-        test('Connecting two instances and sending with pre_mdw', async (done: Done) => {
+        test('Send data with pre_mdw', async (done: Done) => {
             const save_george = george_port;
             const save_bush = bush_port;
 
@@ -875,7 +543,6 @@ describe('Bush Test Suite', () => {
             const george_env = {};
             const bush_env = {};
 
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
             george = new Bush({event: george_event, env: george_env});
             await george.start();
             await george.bind({ip, port: save_george});
@@ -896,28 +563,18 @@ describe('Bush Test Suite', () => {
                 if (count === 2) done();
             };
 
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.send({signature: identifier, data: [new Buffer('Hello')]});
-                        george.send({signature: george_signature, data: [new Buffer('Hello too')]});
-                    }
-                }, 100);
-            });
-
             george.addReceiveMiddleware('upper1', buffer_uppercase);
             george.onMessage(george_message);
-            await george.listen();
 
             bush.addReceiveMiddleware('upper2', buffer_uppercase);
             bush.onMessage(bush_message);
-            await bush.connect({ip, port: save_george});
+
+            bush.send({ip: '127.0.0.1', port: save_george, data: [new Buffer('Hello')]});
+            george.send({ip: '127.0.0.1', port: save_bush, data: [new Buffer('Hello too')]});
         });
 
         // @ts-ignore
-        test('Connecting two instances and sending with interrupting pre_mdw', async (done: Done) => {
+        test('Send data with interrupting pre_mdw', async (done: Done) => {
             const save_george = george_port;
             const save_bush = bush_port;
 
@@ -930,7 +587,6 @@ describe('Bush Test Suite', () => {
             const george_env = {};
             const bush_env = {};
 
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
             george = new Bush({event: george_event, env: george_env});
             await george.start();
             await george.bind({ip, port: save_george});
@@ -949,29 +605,20 @@ describe('Bush Test Suite', () => {
                 ++count;
             };
 
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.send({signature: identifier, data: [new Buffer('Hello')]});
-                        george.send({signature: george_signature, data: [new Buffer('Hello too')]});
-                    }
-                }, 100);
-            });
-
             george.addReceiveMiddleware('interrupt1', interrupt_mdw);
             george.onMessage(george_message);
-            await george.listen();
 
             bush.addReceiveMiddleware('interrupt2', interrupt_mdw);
             bush.onMessage(bush_message);
-            await bush.connect({ip, port: save_george});
+
+            bush.send({ip: '127.0.0.1', port: save_george, data: [new Buffer('Hello')]});
+            george.send({ip: '127.0.0.1', port: save_bush, data: [new Buffer('Hello too')]});
 
             setTimeout((): void => {
                 if (!count) done();
                 else done(new Error('Should not have received any data'));
             }, 3000);
+
         });
 
     });
@@ -979,7 +626,7 @@ describe('Bush Test Suite', () => {
     describe('Testing Any Middleware Features', () => {
 
         // @ts-ignore
-        test('Connecting two instances and sending and using logging mdw', async (done: Done) => {
+        test('Send data using logging mdw', async (done: Done) => {
             const save_george = george_port;
             const save_bush = bush_port;
 
@@ -992,7 +639,6 @@ describe('Bush Test Suite', () => {
             const george_env = {};
             const bush_env = {};
 
-            const george_signature = '<I 127.0.0.1 ' + (save_bush) + '>';
             george = new Bush({event: george_event, env: george_env});
             await george.start();
             await george.bind({ip, port: save_george});
@@ -1008,25 +654,15 @@ describe('Bush Test Suite', () => {
             const bush_message: OnMessageFunction = (data: any): void => {
             };
 
-            bush_event.on('core:connect', (identifier: string): void => {
-                if (!bush.getConnection(identifier)) return done(new Error('Could not find connection inside bush instance'));
-                const intervalId = setInterval((): void => {
-                    if (george.getConnection(george_signature)) {
-                        clearInterval(intervalId);
-                        bush.send({signature: identifier, data: [new Buffer('Hello')]});
-                        george.send({signature: george_signature, data: [new Buffer('Hello too')]});
-                    }
-                }, 100);
-            });
-
             george.onMessage(george_message);
-            await george.listen();
 
             bush.onMessage(bush_message);
-            await bush.connect({ip, port: save_george});
+
+            bush.send({ip: '127.0.0.1', port: save_george, data: [new Buffer('Hello')]});
+            george.send({ip: '127.0.0.1', port: save_bush, data: [new Buffer('Hello too')]});
 
             setTimeout((): void => {
-                if (end_log.length === 7) done();
+                if (end_log.length === 5) done();
                 else done(new Error('Invalid number of logged lines'));
             }, 3000);
         });
@@ -1158,13 +794,12 @@ describe('Bush Test Suite', () => {
 
         // @ts-ignore
         test('Adding working plugin', async (done: Done) => {
-                const bush_event = new EventEmitter();
-                const bush_env = {};
+            const bush_event = new EventEmitter();
+            const bush_env = {};
 
-                bush = new Bush({event: bush_event, env: bush_env});
-                bush.plug(new WorkingPlugin('working_plugin'));
-                await bush.start();
-                done();
+            bush = new Bush({event: bush_event, env: bush_env});
+            bush.plug(new WorkingPlugin('working_plugin', done));
+            await bush.start();
         });
 
         // @ts-ignore
