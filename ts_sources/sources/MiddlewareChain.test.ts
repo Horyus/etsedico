@@ -205,6 +205,31 @@ describe('MiddlewareChain Test Suite', () => {
         done();
     });
 
+    test('Try correct before/after configuration in waitlist', async (done: Done) => {
+        mdwc = new MiddlewareChain(event, env);
+        mdwc.addMiddleware('waitlist_mdw_name11', string_any_middleware, {config: string_config, after: ['waitlist_mdw_name9'], before: ['waitlist_mdw_name10'], waitlist: true});
+        mdwc.addMiddleware('waitlist_mdw_name9', string_any_middleware, {config: string_config, after: ['waitlist_mdw_name7'], waitlist: true});
+        mdwc.addMiddleware('waitlist_mdw_name10', string_any_middleware, {config: string_config, before: ['waitlist_mdw_name8'], waitlist: true});
+        mdwc.addMiddleware('waitlist_mdw_name7', string_any_middleware, {weight: 10, config: string_config});
+        mdwc.addMiddleware('waitlist_mdw_name8', string_any_middleware, {weight: -10, config: string_config});
+        mdwc.resolveWaitlist();
+        if (mdwc.getMiddlewareList().length !== 5) return done(new Error('Invalid middleware amount'));
+        done();
+    });
+
+    test('Try incorrect before/after configuration in waitlist', async (done: Done) => {
+        try {
+            mdwc = new MiddlewareChain(event, env);
+            mdwc.addMiddleware('waitlist_mdw_name12', string_any_middleware, {config: string_config, before: ['waitlist_mdw_name13'], waitlist: true});
+            mdwc.addMiddleware('waitlist_mdw_name14', string_any_middleware, {weight: 10, config: string_config});
+            mdwc.addMiddleware('waitlist_mdw_name15', string_any_middleware, {weight: -10, config: string_config});
+            mdwc.resolveWaitlist();
+            done(new Error('Should throw'));
+        } catch (e) {
+            done();
+        }
+    });
+
     test('Try incorrect before/after configuration', async (done: Done) => {
         try {
             mdwc = new MiddlewareChain(event, env);

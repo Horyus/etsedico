@@ -15,6 +15,15 @@ interface MiddlewareChainNameRegistry {
 }
 
 /**
+ * Interface for the waitlist.
+ */
+interface MiddlewareWaitlist<DataType, EnvType, ConfigType> {
+    name: string;
+    mdw: MiddlewareFunction<DataType, EnvType>;
+    options: MiddlewareOptions<ConfigType>;
+}
+
+/**
  * Class grouping multiple {@link Middleware} instances for a grouped call.
  *
  * ```typescript
@@ -111,6 +120,11 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
     private readonly mdws: Middleware<DataType, EnvType, ConfigType>[] = [];
 
     /**
+     * Array containing {@link Middleware} chain.
+     */
+    private waitlist_mdws: MiddlewareWaitlist<DataType, EnvType, ConfigType>[] = [];
+
+    /**
      * Creates a new {@link MiddlewareChain} instance
      *
      * @param _event {EventEmitter} Event Emitter used by all {@link Middleware} instances.
@@ -122,6 +136,47 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
     }
 
     /**
+     * Used to resolve all dependencies of middlewares into the waitlist
+     */
+    public resolveWaitlist(): void {
+        while (this.waitlist_mdws.length) {
+            const initial_length = this.waitlist_mdws.length;
+            let unresolved = 0;
+            for (const mdw_info of this.waitlist_mdws) {
+
+                let skip = false;
+                if (mdw_info.options.before) {
+                    for (const before of mdw_info.options.before) {
+                        let found = false;
+                        for (const mdw of this.mdws) {
+                            if (mdw.name === before) found = true;
+                        }
+                        if (!found) skip = true;
+                    }
+                }
+
+                if (mdw_info.options.after) {
+                    for (const after of mdw_info.options.after) {
+                        let found = false;
+                        for (const mdw of this.mdws) {
+                            if (mdw.name === after) found = true;
+                        }
+                        if (!found) skip = true;
+                    }
+                }
+
+                if (!skip) {
+                    this.addMiddleware(mdw_info.name, mdw_info.mdw, {...mdw_info.options, waitlist: false});
+                    this.waitlist_mdws = this.waitlist_mdws.filter((elem: MiddlewareWaitlist<DataType, EnvType, ConfigType>) => elem.name !== mdw_info.name);
+                } else {
+                    ++unresolved;
+                }
+            }
+            if (unresolved === initial_length) throw new Error('Unable to resolve middleware dependencies');
+        }
+    }
+
+    /**
      * Creates a new {@link Middleware} if name is available, adds it into the list and sort it.
      *
      * @param _name {string} Name of {@link Middleware}.
@@ -129,9 +184,13 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
      * @param _options {MiddlewareOptions} {@link Middleware} options.
      */
     public addMiddleware(_name: string, _mdw: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
-        if (MiddlewareChain.name_registry[_name]) throw new Error('Middleware name already in use');
+        if (MiddlewareChain.name_registry[_name]) throw new Error('Middleware name already in use ' + _name);
 
         if (_options) {
+            if (_options.waitlist) {
+                this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
+                return ;
+            }
             let before_values;
             let after_values;
 
