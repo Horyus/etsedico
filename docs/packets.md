@@ -50,9 +50,38 @@ inside one `µPacket`. The `Body` can be separated between multiple `µPackets`.
 ---
 
 <a name="data_packet"></a>
+### Key Exchange Packet
+
+The first `µPacket` contains the `Header`. There is no body. This packet is not encrypted !
+
+When packet of this type is received, and all security checks have passed, response with the same packet should be made.
+
+This packet is used to exchange public keys if one (or both) of the peer are missing keys.
+
+----
+
+<a name="dkey_exchange_packet"></a>
+#### `Key Exchange Packet`: 14 bytes (µHeader) + 204 bytes
+| Field Name | Field Description | Field Byte Size |
+|------------|-------------------|-----------------|
+| `µHeader` | [`µHeader`](#uheader) | `14` |
+| `type` | Packet type (here 0) | `1` |
+| `master_address` | Ethereum Real Address of the user | `20` |
+| `destination_address` | Ethereum Real Address of destination user | `20` |
+| `session_public_key` | EC Temporary public key used for dynamic signatures | `33` |
+| `session_signature` | ECDSA Signature of the `session_public_key` emitted from the `master_address` | `65` |
+| `security_signature` | Signature of all the previous made from session keypair | `65` |
+
+----
+
+
+
+<a name="data_packet"></a>
 ### Data Packet
 
-The first `µPacket` contains the `Header`. Then all the following ones the `Body`.
+The first `µPacket` contains the `Header`. Then all the following ones the `Body`. This packet is encrypted.
+
+This packet is used for any type of exchange.
 
 ----
 
