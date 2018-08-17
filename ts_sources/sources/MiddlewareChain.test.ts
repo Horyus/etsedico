@@ -180,27 +180,27 @@ describe('MiddlewareChain Test Suite', () => {
         done();
     });
 
-    test('Try correct requires configuration', async (done: Done) => {
+    test('Try correct require configuration', async (done: Done) => {
         mdwc = new MiddlewareChain(event, env);
         mdwc.addMiddleware('require_name6', string_any_middleware, {
             config: string_config
         });
         mdwc.addMiddleware('require_name5', string_any_middleware, {
             config: string_config,
-            requires: ['require_name6']
+            require: ['require_name6']
         });
         if (!mdwc.resolved) done(new Error('Should be resolved'));
         done();
     });
 
-    test('Try incorrect requires configuration', async (done: Done) => {
+    test('Try incorrect require configuration', async (done: Done) => {
         mdwc = new MiddlewareChain(event, env);
         mdwc.addMiddleware('require_name7', string_any_middleware, {
             config: string_config
         });
         mdwc.addMiddleware('require_name8', string_any_middleware, {
             config: string_config,
-            requires: ['require_name9']
+            require: ['require_name9']
         });
         if (mdwc.resolved) done(new Error('Should not be resolved'));
         done();

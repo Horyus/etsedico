@@ -91,6 +91,21 @@ interface MiddlewareWaitlist<DataType, EnvType, ConfigType> {
  * mdwc.getHighestMiddleware(); // 6
  * mdwc.getLowestMiddleware(); // 1
  *
+ * // You can also use the before, after and requires options
+ * mdwc.addMiddleware('increment4', increment_letter_in_env, {weight: 3}, require: ['increment5', 'increment6']);
+ * mdwc.addMiddleware('increment5', increment_letter_in_env, {weight: 1}, after: ['append7']);
+ * mdwc.addMiddleware('increment6', increment_letter_in_env, {weight: 4});
+ * mdwc.addMiddleware('append7', append_a_letter, {weight: 6}, before: ['append9']);
+ * mdwc.addMiddleware('append8', append_a_letter, {weight: 5, config: config_checker});
+ * mdwc.addMiddleware('append9', append_a_letter, {weight: 2});
+ *
+ * // requireAdds only if dependencies are met. If not found when calling addMiddleware, the middleware is placed
+ * // in a wailist and the MiddlewareChain attempts to resolve the dependencies of the waitlist every time addMiddleware
+ * // is called.
+ * // before / after: Same as require, but also demand that the middleware is plaaace before / after one of several
+ * // middlewares. Will throw if not possible, and will also wait in the waitlist if dependencies are not met
+ * //
+ * // You can call mdwc.resolved to know if all the dependencies have been resolved.
  * ```
  *
  * @param DataType The data going through the {@link Middleware} instances can be extended from the DataType.
@@ -150,7 +165,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
         const missing = this.waitlist_mdws
             .map((elem: MiddlewareWaitlist<DataType, EnvType, ConfigType>) => {
                 let out: string[] = [];
-                if (elem.options.requires) out = out.concat(elem.options.requires);
+                if (elem.options.require) out = out.concat(elem.options.require);
                 if (elem.options.before) out = out.concat(elem.options.before);
                 if (elem.options.after) out = out.concat(elem.options.after);
                 out.filter((elem: string) => {
@@ -179,11 +194,11 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
 
                 let skip = false;
 
-                if (mdw_info.options.requires) {
-                    for (const requires of mdw_info.options.requires) {
+                if (mdw_info.options.require) {
+                    for (const require of mdw_info.options.require) {
                         let found = false;
                         for (const mdw of this.mdws) {
-                            if (mdw.name === requires) found = true;
+                            if (mdw.name === require) found = true;
                         }
                         if (!found) skip = true;
                     }
@@ -210,7 +225,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
                 }
 
                 if (!skip) {
-                    this.addMiddleware(mdw_info.name, mdw_info.mdw, {...mdw_info.options, requires: undefined});
+                    this.addMiddleware(mdw_info.name, mdw_info.mdw, {...mdw_info.options, require: undefined});
                     this.waitlist_mdws = this.waitlist_mdws.filter((elem: MiddlewareWaitlist<DataType, EnvType, ConfigType>) => elem.name !== mdw_info.name);
                 } else {
                     ++unresolved;
@@ -218,6 +233,43 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
             }
             if (unresolved === initial_length) throw new Error('Unable to resolve middleware dependencies');
         }
+    }
+
+    private _manage_requires(_name: string, _mdw: MiddlewareFunction<DataType, EnvType>, _options: MiddlewareOptions<ConfigType>): void {
+        this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
+        try {
+            this.resolveWaitlist();
+        } catch (e) {}
+    }
+
+    private _manage_before(_options: MiddlewareOptions<ConfigType>): number[] {
+        return this.mdws
+            .map((mdw: Middleware) => {
+                if (_options.before.indexOf(mdw.name) !== -1) {
+                    _options.before = _options.before.filter((elem: string) => elem !== mdw.name);
+                    return mdw.weight;
+                } else {
+                    return NaN;
+                }
+            })
+            .filter((val: number) =>
+                (!!val))
+            .sort((a: number, b: number) => b - a);
+    }
+
+    private _manage_after(_options: MiddlewareOptions<ConfigType>): number[] {
+        return this.mdws
+            .map((mdw: Middleware) => {
+                if (_options.after.indexOf(mdw.name) !== -1) {
+                    _options.after = _options.after.filter((elem: string) => elem !== mdw.name);
+                    return mdw.weight;
+                } else {
+                    return NaN;
+                }
+            })
+            .filter((val: number) =>
+                (!!val))
+            .sort((a: number, b: number) => b - a);
     }
 
     /**
@@ -234,27 +286,10 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
             let before_values;
             let after_values;
 
-            if (_options.requires) {
-                this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
-                try {
-                    this.resolveWaitlist();
-                } catch (e) {}
-                return ;
-            }
+            if (_options.require) return this._manage_requires(_name, _mdw, _options);
 
             if (_options.before) {
-                before_values = this.mdws
-                    .map((mdw: Middleware) => {
-                        if (_options.before.indexOf(mdw.name) !== -1) {
-                            _options.before = _options.before.filter((elem: string) => elem !== mdw.name);
-                            return mdw.weight;
-                        } else {
-                            return NaN;
-                        }
-                    })
-                    .filter((val: number) =>
-                        (!!val))
-                    .sort((a: number, b: number) => b - a);
+                before_values = this._manage_before(_options);
                 if (_options.before.length !== 0) {
                     this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
                     return ;
@@ -262,18 +297,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
             }
 
             if (_options.after) {
-                after_values = this.mdws
-                    .map((mdw: Middleware) => {
-                        if (_options.after.indexOf(mdw.name) !== -1) {
-                            _options.after = _options.after.filter((elem: string) => elem !== mdw.name);
-                            return mdw.weight;
-                        } else {
-                            return NaN;
-                        }
-                    })
-                    .filter((val: number) =>
-                        (!!val))
-                    .sort((a: number, b: number) => b - a);
+                after_values = this._manage_after(_options);
                 if (_options.after.length !== 0) {
                     this.waitlist_mdws.push({name: _name, mdw: _mdw, options: _options});
                     return ;

@@ -281,7 +281,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to pre_send_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addPreSendMiddleware('one_miss', string_any_middleware, {requires: ['test']});
+                bush.addPreSendMiddleware('one_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
@@ -293,7 +293,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to post_send_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addPostSendMiddleware('two_miss', string_any_middleware, {requires: ['test', 'another_test'], before: ['hi'], after: ['bye']});
+                bush.addPostSendMiddleware('two_miss', string_any_middleware, {require: ['test', 'another_test'], before: ['hi'], after: ['bye']});
                 bush.addPostSendMiddleware('another_test', string_any_middleware);
                 await bush.start();
                 done(new Error('Should throw'));
@@ -318,7 +318,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to any_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addAnyMiddleware('four_miss', string_any_middleware, {requires: ['test']});
+                bush.addAnyMiddleware('four_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
@@ -330,7 +330,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to listen_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addListenMiddleware('five_miss', string_any_middleware, {requires: ['test']});
+                bush.addListenMiddleware('five_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
@@ -342,7 +342,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to pre_bind_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addPreBindMiddleware('six_miss', string_any_middleware, {requires: ['test']});
+                bush.addPreBindMiddleware('six_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
@@ -354,7 +354,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to post_bind_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addPostBindMiddleware('seven_miss', string_any_middleware, {requires: ['test']});
+                bush.addPostBindMiddleware('seven_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
@@ -366,7 +366,7 @@ describe('Bush Test Suite', () => {
         test('Add middleware to error_mdw with missing deps', async (done: Done) => {
             try {
                 bush = new Bush();
-                bush.addErrorMiddleware('seven_miss', string_any_middleware, {requires: ['test']});
+                bush.addErrorMiddleware('seven_miss', string_any_middleware, {require: ['test']});
                 await bush.start();
                 done(new Error('Should throw'));
             } catch (e) {
