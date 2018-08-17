@@ -56,7 +56,11 @@
   },
   "dependencies": {
     "@types/node": "^10.5.1",
+    "eccrypto": "^1.0.3",
+    "elliptic": "^6.4.1",
+    "ethers": "^3.0.26",
     "typescript": "^2.9.2",
-    "utp-punch": "^1.0.0"
+    "utp-punch": "^1.0.0",
+    "web3-utils": "^1.0.0-beta.35"
   }
 }
