@@ -1,5 +1,11 @@
 import { decrypt } from 'eccrypto';
 
+/**
+ * ECIES Decryption with the given private key.
+ *
+ * @param {Buffer} privateKey Private key to use for decryption.
+ * @param {Buffer} payload Encrytped payload.
+ */
 export const ec_decrypt = async (privateKey: Buffer, payload: Buffer): Promise<Buffer> => {
     const rebuilt_payload = {
         iv: payload.slice(0, 16),

@@ -1,15 +1,14 @@
-import { ec_decrypt } from './ec_decrypt';
-import { Wallet } from 'ethers';
-
 declare var describe;
 declare var expect;
 declare var test;
 
-import { ec_encrypt } from './ec_encrypt';
-import { ec_gen }     from './ec_gen';
+import { Wallet }     from 'ethers';
 import * as Crypto    from 'crypto';
 import { ec_sign }    from './ec_sign';
 import { ec_verify }  from './ec_verify';
+import { ec_encrypt } from './ec_encrypt';
+import { ec_gen }     from './ec_gen';
+import { ec_decrypt } from './ec_decrypt';
 
 type Done = (arg?: any) => void;
 
@@ -130,10 +129,13 @@ describe('EC Crypto', () => {
             const message = new Buffer('Testing ... ');
             const keypair = ec_gen();
             const wallet = new Wallet(keypair.privateKey);
-            const signature = ec_sign(keypair.privateKey, message);
 
-            if (ec_verify(message, new Buffer('eeff', 'hex'), new Buffer(wallet.address.slice(2), 'hex'))) done(new Error('Signature should be invalid'));
-            done();
+            try {
+                ec_verify(message, new Buffer('eeff', 'hex'), new Buffer(wallet.address.slice(2), 'hex'));
+                done(new Error('Should throw'));
+            } catch (e) {
+                done();
+            }
         });
 
     });

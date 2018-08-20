@@ -1,5 +1,5 @@
 import * as Crypto from 'crypto';
-import { ec } from 'elliptic';
+import { ec }      from 'elliptic';
 
 const EC = new ec('secp256k1');
 
