@@ -152,6 +152,8 @@ export class Bush {
 
     private readonly plugins: IBushPlugin[] = [];
 
+    public readonly methods: any = {};
+
     /**
      * Create an instance of Bush - Bidirectional UDP Socket Handler
      *
@@ -547,6 +549,18 @@ export class Bush {
         this.pushConfig('loaded.plugins', plugin.name);
     }
 
+    /**
+     * Add extansion to the bush instance. Extansions are methods exposed by the plugin. They allow
+     * easier chain of action interactions.
+     *
+     * @param {string} name Name of the method to expose.
+     * @param {ExpansionType} method Method to expose.
+     */
+    public expand<ExpansionType = any>(name: string, method: ExpansionType): void {
+        if (this.methods[name]) throw new Error(`Expansion name ${name} is not available.`);
+        this.methods[name] = method;
+    }
+
     private _add_mdw<DataType = any, EnvType = any, ConfigType = any>(_where: string, _name: string, _mdw_func: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
 
         _where = _where + '_mdw';
@@ -587,6 +601,9 @@ export class Bush {
     }
 
     private async _configure(): Promise<void> {
+
+        this.setConfig('bush', this);
+
         await this.pre_send_mdw.configure(this.config);
         if (!this.pre_send_mdw.resolved) throw new Error(`Missing dependencies in pre_send ${JSON.stringify(this.pre_send_mdw.missing_dependencies)}`);
         await this.post_send_mdw.configure(this.config);
