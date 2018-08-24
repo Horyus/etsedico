@@ -4,7 +4,7 @@
   Author: Iulian Rotaru
   -->
 <div align="center" >
-<img width="25%" src="https://raw.githubusercontent.com/Horyus/battlebird/develop/.assets/Battlebird.png">
+<img width="50%" src="https://raw.githubusercontent.com/Horyus/battlebird/develop/.assets/Battlebird.png">
 </div>
 
 
