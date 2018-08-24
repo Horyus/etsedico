@@ -1,6 +1,6 @@
 # Contributing
 
-To contribute, head to [github](https://github.com/Horyus/etsedico).
+To contribute, head to [github](https://github.com/Horyus/battlebird).
 When contributing to this repository, please first discuss the change you wish to make via issue,
 email, or any other method with the owners of this repository before making a change.
 
@@ -16,8 +16,8 @@ Please note we have a code of conduct, please follow it in all your interactions
    should start from `develop` branch. Naming convention for the issue is `[(THEME)] (TITLE)` and Branch Naming
    should be `(TYPE)/(PROJECT_ID)-(ISSUE_NUMBER)-(TITLE)`. As an example, if you want to add
    something related with Redux, Issue name can be `[Redux] Add Reducer`, and Branch should be
-   (saying the issue number is 42) `feature/ESDC-42-add-reducer`. The github pull request title should be
-   named `Resolve ESDC #42 "[Redux] Add Reducer"` and should contain `Resolve ESDC #42` in the description,
+   (saying the issue number is 42) `feature/BTBD-42-add-reducer`. The github pull request title should be
+   named `Resolve BTBD #42 "[Redux] Add Reducer"` and should contain `Resolve BTBD #42` in the description,
    for github to properly link the pull request and the issue.
 
    **THEME**: 1-2 Words defining the theme of the contribution. You can look at other contributions to use
@@ -28,7 +28,7 @@ Please note we have a code of conduct, please follow it in all your interactions
    **TYPE**: `feature`, `bugfix`, `documentation` are the main three themes. You can use your own if you find these
    not suitable.
 
-   **PROJECT_ID**: `ESDC`.
+   **PROJECT_ID**: `BTBD`.
 
    **ISSUE_NUMBER**: Issue number delivered by gitlab.
 
@@ -49,7 +49,7 @@ ISSUE_REFERENCE
 
    **COMMIT_BODY**: optional, 72 characters per line. If no body, should be replaced by `ISSUE_REFERENCE`.
 
-   **ISSUE_REFERENCE**: `ESDC #42` would be the issue reference of the example above.
+   **ISSUE_REFERENCE**: `BTBD #42` would be the issue reference of the example above.
 
 
 

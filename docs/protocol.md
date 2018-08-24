@@ -1,6 +1,6 @@
 # Protocol
 
-This document presents the protocol, how packets are exchange and what can be achieved with Etsedico.
+This document presents the protocol, how packets are exchange and what can be achieved with `battlebird`.
 This Protocol assumes that an UDP connection is achievable between the two peers. It should be handled before trying to
 connect.
 

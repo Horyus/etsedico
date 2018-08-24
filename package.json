@@ -1,7 +1,7 @@
 {
-  "name": "etsedico",
+  "name": "battlebird",
   "version": "0.0.2",
-  "description": "Ethereum Secured Direct Communication",
+  "description": "Secured Communication with great Ethereum Synergy",
   "main": "./index.js",
   "browser": "./index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "test": "npm run lint && jest --coverage",
     "lint": "tslint --format verbose --project .",
     "codecov": "codecov",
-    "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Ξtsedico'"
+    "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Battlebird'"
   },
   "jest": {
     "testURL": "http://localhost",
@@ -28,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Horyus/etsedico.git"
+    "url": "git+https://github.com/Horyus/battlebird.git"
   },
   "keywords": [
     "communication",
@@ -42,9 +42,9 @@
   "author": "Horyus",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Horyus/etsedico/issues"
+    "url": "https://github.com/Horyus/battlebird/issues"
   },
-  "homepage": "https://github.com/Horyus/etsedico#readme",
+  "homepage": "https://github.com/Horyus/battlebird#readme",
   "devDependencies": {
     "codecov": "^3.0.4",
     "jest": "^23.2.0",

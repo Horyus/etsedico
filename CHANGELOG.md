@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-[[Unreleased]](https://github.com/Horyus/etsedico/compare/HEAD...HEAD)
+[[Unreleased]](https://github.com/Horyus/battlebird/compare/HEAD...HEAD)
 
 
 

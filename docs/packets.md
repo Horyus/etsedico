@@ -2,16 +2,16 @@
 
 ## Introduction
 
-This document explains what are the different types of packets inside `etsedico`. Then each packet type fields are
+This document explains what are the different types of packets inside `battlebird`. Then each packet type fields are
 detailed.
 
 ## Beforehand
 
-`etsedico` is a [binary protocol](https://en.wikipedia.org/wiki/Binary_protocol). This means that all packets should be formatted to big endian when traveling on
-the network. `etsedico` is built on top of [`UDP`](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and uses common
+`battlebird` is a [binary protocol](https://en.wikipedia.org/wiki/Binary_protocol). This means that all packets should be formatted to big endian when traveling on
+the network. `battlebird` is built on top of [`UDP`](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and uses common
 strategies like `UDP Hole Punching` in order to achieve connection between peers. Because of `UDP` limitations, a `Packet` is divided
-into `µPackets`, that have a maximum size of 508 bytes. `etsedico` is able to reconstruct `Packets` on each communicating end, while
-ensuring message safety and authenticity. `etsedico` was not built for large packets transmission, and should be used with something
+into `µPackets`, that have a maximum size of 508 bytes. `battlebird` is able to reconstruct `Packets` on each communicating end, while
+ensuring message safety and authenticity. `battlebird` was not built for large packets transmission, and should be used with something
 like `IPFS` to store and exchange large data.
 
 ### µPackets

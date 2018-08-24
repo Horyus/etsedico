@@ -1,3 +1,3 @@
-import { Etsedico } from './sources/Etsedico';
+import { Battlebird } from './sources/Battlebird';
 
-const esdc = new Etsedico('name');
+const btbd = new Battlebird('name');

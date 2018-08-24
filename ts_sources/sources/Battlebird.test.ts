@@ -2,12 +2,12 @@ declare var describe;
 declare var test;
 declare var expect;
 
-import { Etsedico } from './Etsedico';
+import { Battlebird } from './Battlebird';
 
 describe('Dummy Test Suite', () => {
 
-    test('Testing Etsedico', () => {
-        const instance = new Etsedico('test');
+    test('Testing Battlebird', () => {
+        const instance = new Battlebird('test');
         expect(instance.getValue()).toBe('test');
     });
 

@@ -15,7 +15,7 @@
     "./typings.d.ts",
     "./ts_sources/index.ts",
 
-    "./ts_sources/sources/Etsedico.ts",
+    "./ts_sources/sources/Battlebird.ts",
     "./ts_sources/sources/Middleware.ts",
     "./ts_sources/sources/MiddlewareChain.ts",
     "./ts_sources/sources/Bush.ts",

@@ -1,4 +1,4 @@
-export class Etsedico {
+export class Battlebird {
 
     private readonly useless: string = '';
 
