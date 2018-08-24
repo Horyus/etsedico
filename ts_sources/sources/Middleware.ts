@@ -11,6 +11,9 @@ import { MiddlewareNamingRegex } from './Utils';
 export interface MiddlewareOptions<ConfigType = any> {
     weight?: number;
     config?: MiddlewareConfig<ConfigType>;
+    before?: string[];
+    after?: string[];
+    require?: string[];
 }
 
 /**

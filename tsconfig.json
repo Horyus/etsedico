@@ -18,6 +18,7 @@
     "./ts_sources/sources/Etsedico.ts",
     "./ts_sources/sources/Middleware.ts",
     "./ts_sources/sources/MiddlewareChain.ts",
-    "./ts_sources/sources/Bush.ts"
+    "./ts_sources/sources/Bush.ts",
+    "./ts_sources/sources/Utils.ts"
   ]
 }
