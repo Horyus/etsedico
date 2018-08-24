@@ -118,6 +118,45 @@ const interrupt_mdw: MiddlewareFunction<ReceiveDT, any> = (data: ReceiveDT, env:
 // Test Plugins
 
 // tslint:disable-next-line:max-classes-per-file
+class InvalidExpandingPlugin implements IBushPlugin {
+
+    public name: string;
+    private readonly done: Done;
+
+    public constructor(_name: string, done: Done) {
+        this.name = _name;
+        this.done = done;
+    }
+
+    public inject(bush: Bush): void {
+        bush.expand('done', () => {
+            this.done();
+        });
+        bush.expand('done', () => {
+            this.done();
+        });
+    }
+}
+
+// tslint:disable-next-line:max-classes-per-file
+class ExpandingPlugin implements IBushPlugin {
+
+    public name: string;
+    private readonly done: Done;
+
+    public constructor(_name: string, done: Done) {
+        this.name = _name;
+        this.done = done;
+    }
+
+    public inject(bush: Bush): void {
+        bush.expand('done', () => {
+            this.done();
+        });
+    }
+}
+
+// tslint:disable-next-line:max-classes-per-file
 class WorkingPlugin implements IBushPlugin {
 
     public name: string;
@@ -932,6 +971,32 @@ describe('Bush Test Suite', () => {
 
                 bush = new Bush({event: bush_event, env: bush_env});
                 bush.plug(new ThrowingPlugin('throwing_plugin'));
+                await bush.start();
+                done(new Error('Plugin should throw'));
+            } catch (e) {
+                done();
+            }
+        });
+
+        // @ts-ignore
+        test('Adding expanding plugin', async (done: Done) => {
+            const bush_event = new EventEmitter();
+            const bush_env = {};
+
+            bush = new Bush({event: bush_event, env: bush_env});
+            bush.plug(new ExpandingPlugin('expanding_plugin', done));
+            await bush.start();
+            bush.methods.done();
+        });
+
+        // @ts-ignore
+        test('Adding invalid expanding plugin', async (done: Done) => {
+            try {
+                const bush_event = new EventEmitter();
+                const bush_env = {};
+
+                bush = new Bush({event: bush_event, env: bush_env});
+                bush.plug(new InvalidExpandingPlugin('expanding_plugin', done));
                 await bush.start();
                 done(new Error('Plugin should throw'));
             } catch (e) {
