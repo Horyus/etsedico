@@ -19,6 +19,14 @@
     "./ts_sources/sources/Middleware.ts",
     "./ts_sources/sources/MiddlewareChain.ts",
     "./ts_sources/sources/Bush.ts",
-    "./ts_sources/sources/Utils.ts"
+    "./ts_sources/sources/Utils.ts",
+
+    "./ts_sources/sources/utility/btbd-crypto/ec_decrypt.ts",
+    "./ts_sources/sources/utility/btbd-crypto/ec_encrypt.ts",
+    "./ts_sources/sources/utility/btbd-crypto/ec_sign.ts",
+    "./ts_sources/sources/utility/btbd-crypto/rsa_decrypt.ts",
+    "./ts_sources/sources/utility/btbd-crypto/rsa_encrypt.ts",
+
+    "./ts_sources/sources/utility/btbd-packets/Packet.ts"
   ]
 }
