@@ -1,4 +1,5 @@
 node_modules
+build
 /sources
 /index.js
 /generated_doc
