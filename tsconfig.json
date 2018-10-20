@@ -9,16 +9,11 @@
     "module" : "commonjs"
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./ts_sources/**/*.test.ts"
   ],
   "include": [
     "./typings.d.ts",
-    "./ts_sources/index.ts",
-
-    "./ts_sources/sources/Battlebird.ts",
-    "./ts_sources/sources/Middleware.ts",
-    "./ts_sources/sources/MiddlewareChain.ts",
-    "./ts_sources/sources/Bush.ts",
-    "./ts_sources/sources/Utils.ts"
+    "./ts_sources/**/*.ts"
   ]
 }
