@@ -3,6 +3,7 @@
 
  module.exports = {
      entry: './',
+     target: 'node',
      output: {
          path: path.resolve(__dirname, 'build'),
          filename: 'app.bundle.js'
@@ -19,6 +20,11 @@
      stats: {
          colors: true
      },
-     devtool: 'source-map'
+     devtool: 'source-map',
+     resolve: {
+       alias: {
+         dgram: "dgram-browserify"
+       }
+     }
  };
 
