@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "@types/node": "^10.5.1",
+    "dgram-browserify": "0.0.13",
     "eccrypto": "^1.0.3",
     "elliptic": "^6.4.1",
     "ethers": "^3.0.26",
