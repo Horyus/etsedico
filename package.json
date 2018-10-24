@@ -57,10 +57,11 @@
   "dependencies": {
     "@types/node": "^10.5.1",
     "eccrypto": "^1.0.3",
-    "elliptic": "^6.4.1",
-    "ethers": "^3.0.26",
+    "ethereum-address": "0.0.4",
+    "ethers": "^4.0.7",
+    "int64-buffer": "^0.99.1007",
+    "js-sha3": "^0.8.0",
     "typescript": "^2.9.2",
-    "utp-punch": "^1.0.0",
     "web3-utils": "^1.0.0-beta.35"
   }
 }
