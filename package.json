@@ -6,7 +6,7 @@
   "browser": "./index.js",
   "scripts": {
     "postinstall": "tsc",
-    "test": "npm run lint && jest --coverage",
+    "test": "npm run lint && jest --coverage --verbose",
     "lint": "tslint --format verbose --project .",
     "codecov": "codecov",
     "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Battlebird'"
