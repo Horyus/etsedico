@@ -5,9 +5,10 @@
   "main": "./index.js",
   "browser": "./index.js",
   "scripts": {
+    "build": "tsc && webpack",
     "postinstall": "tsc",
-    "test": "npm run lint && jest --coverage --verbose",
-    "lint": "tslint --format verbose --project .",
+    "test": "npm run lint && jest --coverage --verbose ./ts_sources",
+    "lint": "tslint -e '**/*.test.ts' --format verbose --project .",
     "codecov": "codecov",
     "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Battlebird'"
   },
@@ -46,16 +47,26 @@
   },
   "homepage": "https://github.com/Horyus/battlebird#readme",
   "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.4",
+    "babel-preset-env": "^1.7.0",
     "codecov": "^3.0.4",
     "jest": "^23.2.0",
     "linted": "^1.0.4",
     "ts-jest": "^23.0.0",
     "tslint": "^5.10.0",
     "typedoc": "^0.11.1",
-    "typedoc-thunder-theme": "0.0.1"
+    "typedoc-thunder-theme": "0.0.1",
+    "webpack": "^4.21.0",
+    "webpack-cli": "^3.1.2",
+    "@babel/preset-es2017": "^7.0.0-beta.53"
   },
   "dependencies": {
     "@types/node": "^10.5.1",
+    "dgram-browserify": "0.0.13",
     "eccrypto": "^1.0.3",
     "ethereum-address": "0.0.4",
     "ethers": "^4.0.7",
