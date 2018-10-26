@@ -5,9 +5,9 @@
   "main": "./index.js",
   "browser": "./index.js",
   "scripts": {
-    "build": "webpack",
+    "build": "tsc && webpack",
     "postinstall": "tsc",
-    "test": "npm run lint && jest --coverage ./ts_sources",
+    "test": "npm run lint && jest --coverage --verbose ./ts_sources",
     "lint": "tslint -e '**/*.test.ts' --format verbose --project .",
     "codecov": "codecov",
     "doc": "typedoc --out ./generated_doc --mode file ./ts_sources/ --theme ./node_modules/typedoc-thunder-theme/bin/default/ --name 'Battlebird'"
@@ -19,10 +19,10 @@
     },
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "moduleFileExtensions": [
-      "js",
-      "jsx",
       "ts",
       "tsx",
+      "js",
+      "jsx",
       "json",
       "node"
     ]
@@ -61,16 +61,18 @@
     "typedoc": "^0.11.1",
     "typedoc-thunder-theme": "0.0.1",
     "webpack": "^4.21.0",
-    "webpack-cli": "^3.1.2"
+    "webpack-cli": "^3.1.2",
+    "@babel/preset-es2017": "^7.0.0-beta.53"
   },
   "dependencies": {
     "@types/node": "^10.5.1",
     "dgram-browserify": "0.0.13",
     "eccrypto": "^1.0.3",
-    "elliptic": "^6.4.1",
-    "ethers": "^3.0.26",
+    "ethereum-address": "0.0.4",
+    "ethers": "^4.0.7",
+    "int64-buffer": "^0.99.1007",
+    "js-sha3": "^0.8.0",
     "typescript": "^2.9.2",
-    "utp-punch": "^1.0.0",
     "web3-utils": "^1.0.0-beta.35"
   }
 }
