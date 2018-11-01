@@ -4,27 +4,26 @@ import { keccak256 }                        from 'js-sha3';
 import { ec_address, ec_sign, ec_verify }   from '../btbd-crypto';
 import { UPackets, UPacketsEncryptionType } from '../btbd-upackets/UPackets';
 
-const OFFSET_TYPE: number = 0;
-const SIZE_TYPE: number = 1;
-const OFFSET_METHOD: number = OFFSET_TYPE + SIZE_TYPE;
-const SIZE_METHOD: number = 32;
-const OFFSET_MASTER_ADDRESS: number = OFFSET_METHOD + SIZE_METHOD;
-const SIZE_MASTER_ADDRESS: number = 20;
-const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
-const SIZE_DESTINATION_ADDRESS: number = 20;
-const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
-const SIZE_PUBLIC_KEY: number = 65;
-const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
-const SIZE_MASTER_SIGNATURE: number = 65;
-const OFFSET_BODY_CHECKSUM: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
-const SIZE_BODY_CHECKSUM: number = 32;
-const OFFSET_BODY_PACKET: number = OFFSET_BODY_CHECKSUM + SIZE_BODY_CHECKSUM;
-const SIZE_BODY_PACKET: number = 4;
-const OFFSET_SECURITY_SIGNATURE: number = OFFSET_BODY_PACKET + SIZE_BODY_PACKET;
-const SIZE_SECURITY_SIGNATURE: number = 65;
-
-const HEADER_SIZE: number = OFFSET_SECURITY_SIGNATURE + SIZE_SECURITY_SIGNATURE;
-const SIGNATURE_PAYLOAD_SIZE: number = HEADER_SIZE - SIZE_SECURITY_SIGNATURE;
+export const OFFSET_TYPE: number = 0;
+export const SIZE_TYPE: number = 1;
+export const OFFSET_METHOD: number = OFFSET_TYPE + SIZE_TYPE;
+export const SIZE_METHOD: number = 32;
+export const OFFSET_MASTER_ADDRESS: number = OFFSET_METHOD + SIZE_METHOD;
+export const SIZE_MASTER_ADDRESS: number = 20;
+export const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
+export const SIZE_DESTINATION_ADDRESS: number = 20;
+export const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
+export const SIZE_PUBLIC_KEY: number = 65;
+export const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
+export const SIZE_MASTER_SIGNATURE: number = 65;
+export const OFFSET_BODY_CHECKSUM: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
+export const SIZE_BODY_CHECKSUM: number = 32;
+export const OFFSET_BODY_PACKET: number = OFFSET_BODY_CHECKSUM + SIZE_BODY_CHECKSUM;
+export const SIZE_BODY_PACKET: number = 4;
+export const OFFSET_SECURITY_SIGNATURE: number = OFFSET_BODY_PACKET + SIZE_BODY_PACKET;
+export const SIZE_SECURITY_SIGNATURE: number = 65;
+export const HEADER_SIZE: number = OFFSET_SECURITY_SIGNATURE + SIZE_SECURITY_SIGNATURE;
+export const SIGNATURE_PAYLOAD_SIZE: number = HEADER_SIZE - SIZE_SECURITY_SIGNATURE;
 
 /**
  * Implementation of the ConfirmationPacket Packet type
@@ -39,13 +38,13 @@ export class DataPacket extends Packet {
     public PublicSessionKey: Buffer;
     public SecuritySignature: Buffer;
 
-    constructor(master_address: Buffer, destination_address: Buffer, master_signature: Buffer, timestamp: number, data: Buffer, method: string) {
+    constructor(master_address: Buffer, destination_address: Buffer, master_signature: Buffer, timestamp: number, data: Buffer, method: string, enc?: UPacketsEncryptionType) {
         super(PacketType.DataPacket, master_address, destination_address, master_signature, timestamp);
         if (method.length > 32) throw new Error('Method name should not exceed 32 characters');
         this.Data = data;
         this.Method = method;
         this.DataChecksum = Buffer.from(keccak256(this.Data), 'hex');
-        this.PacketCount = UPackets.estimatePacketCount(UPacketsEncryptionType.RSA, this.Data, UPackets.UPacketSize);
+        this.PacketCount = UPackets.estimatePacketCount(enc || UPacketsEncryptionType.RSA, this.Data, UPackets.UPacketSize);
     }
 
     /**

@@ -3,26 +3,25 @@ import { ECKeyPair }                        from '../btbd-crypto/ec_gen';
 import { ec_address, ec_sign, ec_verify }   from '../btbd-crypto';
 import { UPackets, UPacketsEncryptionType } from '../btbd-upackets/UPackets';
 
-const OFFSET_TYPE: number = 0;
-const SIZE_TYPE: number = 1;
-const OFFSET_PACKET_ID: number = OFFSET_TYPE + SIZE_TYPE;
-const SIZE_PACKET_ID: number = 8;
-const OFFSET_MASTER_ADDRESS: number = OFFSET_PACKET_ID + SIZE_PACKET_ID;
-const SIZE_MASTER_ADDRESS: number = 20;
-const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
-const SIZE_DESTINATION_ADDRESS: number = 20;
-const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
-const SIZE_PUBLIC_KEY: number = 65;
-const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
-const SIZE_MASTER_SIGNATURE: number = 65;
-const OFFSET_MISS_SIZE: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
-const SIZE_MISS_SIZE: number = 2;
-const OFFSET_MISS: number = OFFSET_MISS_SIZE + SIZE_MISS_SIZE;
-const OFFSET_SECURITY_SIGNATURE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => OFFSET_MISS + miss_field_size);
-const SIZE_SECURITY_SIGNATURE: number = 65;
-
-const HEADER_SIZE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => OFFSET_SECURITY_SIGNATURE(miss_field_size) + SIZE_SECURITY_SIGNATURE);
-const SIGNATURE_PAYLOAD_SIZE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => HEADER_SIZE(miss_field_size) - SIZE_SECURITY_SIGNATURE);
+export const OFFSET_TYPE: number = 0;
+export const SIZE_TYPE: number = 1;
+export const OFFSET_PACKET_ID: number = OFFSET_TYPE + SIZE_TYPE;
+export const SIZE_PACKET_ID: number = 9;
+export const OFFSET_MASTER_ADDRESS: number = OFFSET_PACKET_ID + SIZE_PACKET_ID;
+export const SIZE_MASTER_ADDRESS: number = 20;
+export const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
+export const SIZE_DESTINATION_ADDRESS: number = 20;
+export const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
+export const SIZE_PUBLIC_KEY: number = 65;
+export const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
+export const SIZE_MASTER_SIGNATURE: number = 65;
+export const OFFSET_MISS_SIZE: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
+export const SIZE_MISS_SIZE: number = 2;
+export const OFFSET_MISS: number = OFFSET_MISS_SIZE + SIZE_MISS_SIZE;
+export const OFFSET_SECURITY_SIGNATURE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => OFFSET_MISS + miss_field_size);
+export const SIZE_SECURITY_SIGNATURE: number = 65;
+export const HEADER_SIZE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => OFFSET_SECURITY_SIGNATURE(miss_field_size) + SIZE_SECURITY_SIGNATURE);
+export const SIGNATURE_PAYLOAD_SIZE: ((miss_field_size: number) => number) = ((miss_field_size: number): number => HEADER_SIZE(miss_field_size) - SIZE_SECURITY_SIGNATURE);
 
 export interface MissUniqueElement {
     packet_idx: number;
@@ -46,7 +45,7 @@ export class LossPacket extends Packet {
 
     constructor(master_address: Buffer, destination_address: Buffer, master_signature: Buffer, timestamp: number, packet_id: Buffer, miss: (MissUniqueElement | MissRange)[]) {
         super(PacketType.ConfirmationPacket, master_address, destination_address, master_signature, timestamp);
-        if (packet_id.length !== 8) throw new Error('Invalid Packet ID');
+        if (packet_id.length !== 9) throw new Error('Invalid Packet ID');
         this.PacketID = packet_id;
         this.Miss = miss;
     }

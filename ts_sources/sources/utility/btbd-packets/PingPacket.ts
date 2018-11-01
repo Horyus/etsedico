@@ -2,21 +2,20 @@ import { Packet, PacketType, RawPackets } from './Packet';
 import { ECKeyPair }                      from '../btbd-crypto/ec_gen';
 import { ec_address, ec_sign, ec_verify } from '../btbd-crypto';
 
-const OFFSET_TYPE: number = 0;
-const SIZE_TYPE: number = 1;
-const OFFSET_MASTER_ADDRESS: number = OFFSET_TYPE + SIZE_TYPE;
-const SIZE_MASTER_ADDRESS: number = 20;
-const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
-const SIZE_DESTINATION_ADDRESS: number = 20;
-const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
-const SIZE_PUBLIC_KEY: number = 65;
-const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
-const SIZE_MASTER_SIGNATURE: number = 65;
-const OFFSET_SECURITY_SIGNATURE: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
-const SIZE_SECURITY_SIGNATURE: number = 65;
-
-const HEADER_SIZE: number = OFFSET_SECURITY_SIGNATURE + SIZE_SECURITY_SIGNATURE;
-const SIGNATURE_PAYLOAD_SIZE: number = HEADER_SIZE - SIZE_SECURITY_SIGNATURE;
+export const OFFSET_TYPE: number = 0;
+export const SIZE_TYPE: number = 1;
+export const OFFSET_MASTER_ADDRESS: number = OFFSET_TYPE + SIZE_TYPE;
+export const SIZE_MASTER_ADDRESS: number = 20;
+export const OFFSET_DESTINATION_ADDRESS: number = OFFSET_MASTER_ADDRESS + SIZE_MASTER_ADDRESS;
+export const SIZE_DESTINATION_ADDRESS: number = 20;
+export const OFFSET_PUBLIC_KEY: number = OFFSET_DESTINATION_ADDRESS + SIZE_DESTINATION_ADDRESS;
+export const SIZE_PUBLIC_KEY: number = 65;
+export const OFFSET_MASTER_SIGNATURE: number = OFFSET_PUBLIC_KEY + SIZE_PUBLIC_KEY;
+export const SIZE_MASTER_SIGNATURE: number = 65;
+export const OFFSET_SECURITY_SIGNATURE: number = OFFSET_MASTER_SIGNATURE + SIZE_MASTER_SIGNATURE;
+export const SIZE_SECURITY_SIGNATURE: number = 65;
+export const HEADER_SIZE: number = OFFSET_SECURITY_SIGNATURE + SIZE_SECURITY_SIGNATURE;
+export const SIGNATURE_PAYLOAD_SIZE: number = HEADER_SIZE - SIZE_SECURITY_SIGNATURE;
 
 /**
  * Implementation of the PingPacket Packet type
