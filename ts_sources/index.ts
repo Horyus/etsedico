@@ -1,3 +1,3 @@
 import { Battlebird } from './sources/Battlebird';
 
-const btbd = new Battlebird('name');
+const btbd = new Battlebird();
