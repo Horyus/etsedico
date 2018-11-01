@@ -25,7 +25,7 @@ describe('RSA Crypto', () => {
 
     describe('rsa_decrypt', () => {
 
-        const decrypt_and_check = async (msg: Buffer, done: any): void => {
+        const decrypt_and_check = async (msg: Buffer, done: any): Promise<void> => {
             const key = Crypto.randomBytes(32);
 
             const cipher = await rsa_encrypt(key, msg);
