@@ -1,12 +1,12 @@
-import { ECKeyPair } from '../btbd-crypto/ec_gen';
+import { ECKeyPair }                   from '../btbd-crypto/ec_gen';
+import { DataPacket }                  from './DataPacket';
+import { ec_address, ec_gen, ec_sign } from '../btbd-crypto';
+import { RawPackets }                  from './Packet';
+import { UPacketsEncryptionType }      from '../btbd-upackets/UPackets';
 
 declare var describe;
 declare var expect;
 declare var test;
-
-import { DataPacket }                  from './DataPacket';
-import { ec_address, ec_gen, ec_sign } from '../btbd-crypto';
-import { RawPackets }                  from './Packet';
 
 describe('DataPacket Test Suite', () => {
 
@@ -24,6 +24,40 @@ describe('DataPacket Test Suite', () => {
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
 
         const data_packet: DataPacket = new DataPacket(master_address, destination_address, master_signature, timestamp, data, method);
+        data_packet.getRaw(keypair).then((raw: RawPackets) => {
+            const dp: DataPacket = DataPacket.fromRaw(raw.header, raw.body, timestamp);
+
+            if (dp.RawHeader.compare(data_packet.RawHeader)) return done(new Error('Invalid RawHader'));
+            if (dp.SecuritySignature.compare(data_packet.SecuritySignature)) return done(new Error('Invalid SecuritySignature'));
+            if (dp.PublicSessionKey.compare(data_packet.PublicSessionKey)) return done(new Error('Invalid PublicSessionKey'));
+            if (dp.PacketCount !== data_packet.PacketCount) return done(new Error('Invalid PacketCount'));
+            if (dp.DataChecksum.compare(data_packet.DataChecksum)) return done(new Error('Invalid DataChecksum'));
+            if (dp.Data.compare(data_packet.Data)) return done(new Error('Invalid Data'));
+            if (dp.Method !== data_packet.Method) return done(new Error('Invalid Method'));
+            if (dp.MasterAddress.compare(data_packet.MasterAddress)) return done(new Error('Invalid MasterAddress'));
+            if (dp.MasterSignature.compare(data_packet.MasterSignature)) return done(new Error('Invalid MasterSignature'));
+            if (dp.Timestamp.toBuffer().compare(data_packet.Timestamp.toBuffer())) return done(new Error('Invalid Timestamp'));
+            if (dp.DestinationAddress.compare(data_packet.DestinationAddress)) return done(new Error('Invalid DestinationAddress'));
+            if (dp.Type !== data_packet.Type) return done(new Error('Invalid Type'));
+
+            done();
+        });
+    });
+
+    test('Build valid DataPacket with custom encryption scheme estimation', async (done: any) => {
+
+        const master_keypair: ECKeyPair = ec_gen();
+        const master_address: Buffer = ec_address(master_keypair.publicKey);
+
+        const destination_address: Buffer = Buffer.from('889716f93bcF0ce09Ef4e57498E94fD0B84FDAD4', 'hex');
+        const data: Buffer = new Buffer('This is data');
+        const method: string = 'salut';
+        const timestamp: number = Date.now();
+        const keypair: ECKeyPair = ec_gen();
+
+        const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
+
+        const data_packet: DataPacket = new DataPacket(master_address, destination_address, master_signature, timestamp, data, method, UPacketsEncryptionType.EC);
         data_packet.getRaw(keypair).then((raw: RawPackets) => {
             const dp: DataPacket = DataPacket.fromRaw(raw.header, raw.body, timestamp);
 

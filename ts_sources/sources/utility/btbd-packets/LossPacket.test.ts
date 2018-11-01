@@ -20,7 +20,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed: (MissRange | MissUniqueElement)[] = [
             {
@@ -76,7 +76,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed: (MissRange | MissUniqueElement)[] = [
             {
@@ -117,7 +117,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899bb', 'hex');
 
         const missed = [
             {
@@ -162,7 +162,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -210,7 +210,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -241,7 +241,7 @@ describe('ConfirmationPacket Test Suite', () => {
         try {
             const loss_packet: LossPacket = new LossPacket(master_address, destination_address, master_signature, timestamp, packet_id, missed);
             const raw: RawPackets = await loss_packet.getRaw(keypair);
-            Buffer.from('02', 'hex').copy(raw.header, 181);
+            Buffer.from('02', 'hex').copy(raw.header, 182);
             const lp: LossPacket = LossPacket.fromRaw(raw.header, raw.body, timestamp);
             done(new Error('Should throw on invalid miss field'));
         } catch (e) {
@@ -259,7 +259,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -291,7 +291,7 @@ describe('ConfirmationPacket Test Suite', () => {
             const loss_packet: LossPacket = new LossPacket(master_address, destination_address, master_signature, timestamp, packet_id, missed);
             const raw: RawPackets = await loss_packet.getRaw(keypair);
             raw.header = Buffer.concat([raw.header.slice(0, raw.header.length - (65 + 4)), raw.header.slice(raw.header.length - 65)]);
-            raw.header.writeUInt16BE(39, 179);
+            raw.header.writeUInt16BE(39, 180);
             const lp: LossPacket = LossPacket.fromRaw(raw.header, raw.body, timestamp);
             done(new Error('Should throw on invalid miss field'));
         } catch (e) {
@@ -309,7 +309,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -326,7 +326,7 @@ describe('ConfirmationPacket Test Suite', () => {
             const loss_packet: LossPacket = new LossPacket(master_address, destination_address, master_signature, timestamp, packet_id, missed);
             const raw: RawPackets = await loss_packet.getRaw(keypair);
             raw.header = Buffer.concat([raw.header.slice(0, raw.header.length - (65 + 4)), raw.header.slice(raw.header.length - 65)]);
-            raw.header.writeUInt16BE(14, 179);
+            raw.header.writeUInt16BE(14, 180);
             const lp: LossPacket = LossPacket.fromRaw(raw.header, raw.body, timestamp);
             done(new Error('Should throw on invalid miss field'));
         } catch (e) {
@@ -344,7 +344,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [] as (MissRange | MissUniqueElement)[];
         for (let idx = 0; idx < 1000; ++idx) {
@@ -370,7 +370,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -419,7 +419,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = Buffer.from('ee'.repeat(65), 'hex');
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {
@@ -467,7 +467,7 @@ describe('ConfirmationPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const missed = [
             {

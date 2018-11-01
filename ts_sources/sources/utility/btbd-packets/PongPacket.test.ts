@@ -20,7 +20,7 @@ describe('PongPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const pong_packet: PongPacket = new PongPacket(master_address, destination_address, master_signature, timestamp, packet_id);
         pong_packet.getRaw(keypair).then((raw: RawPackets) => {
@@ -50,7 +50,7 @@ describe('PongPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const pong_packet: PongPacket = new PongPacket(master_address, destination_address, master_signature, timestamp, packet_id);
         pong_packet.getRaw(keypair).then((raw: RawPackets) => {
@@ -75,12 +75,12 @@ describe('PongPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const pong_packet: PongPacket = new PongPacket(master_address, destination_address, master_signature, timestamp, packet_id);
         pong_packet.getRaw(keypair).then((raw: RawPackets) => {
             const invalid_sig: Buffer = Buffer.from('ee'.repeat(65), 'hex');
-            invalid_sig.copy(raw.header, 179, 0, 65);
+            invalid_sig.copy(raw.header, 180);
             try {
                 const pp: PongPacket = PongPacket.fromRaw(raw.header, raw.body, timestamp);
                 done(new Error('Should detect invalid security signature'));
@@ -100,7 +100,7 @@ describe('PongPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = Buffer.from('ee'.repeat(65), 'hex');
-        const packet_id: Buffer = Buffer.from('00224455668899aa', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899aabb', 'hex');
 
         const pong_packet: PongPacket = new PongPacket(master_address, destination_address, master_signature, timestamp, packet_id);
         pong_packet.getRaw(keypair).then((raw: RawPackets) => {
@@ -123,7 +123,7 @@ describe('PongPacket Test Suite', () => {
         const keypair: ECKeyPair = ec_gen();
 
         const master_signature: Buffer = await ec_sign(master_keypair.privateKey, ec_address(keypair.publicKey));
-        const packet_id: Buffer = Buffer.from('00224455668899', 'hex');
+        const packet_id: Buffer = Buffer.from('00224455668899bb', 'hex');
 
         try {
             const pong_packet: PongPacket = new PongPacket(master_address, destination_address, master_signature, timestamp, packet_id);
