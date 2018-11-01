@@ -1,3 +1,1 @@
-import { Battlebird } from './sources/Battlebird';
-
-const btbd = new Battlebird();
+export { Battlebird } from './sources/Battlebird';
