@@ -117,7 +117,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
     /**
      * Name registry used to prevent multiple {@link Middleware} instances with same name.
      */
-    private static readonly name_registry: MiddlewareChainNameRegistry = {};
+    private readonly name_registry: MiddlewareChainNameRegistry = {};
 
     /**
      * Event emitter used by all {@link Middleware} instances.
@@ -280,7 +280,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
      * @param _options {MiddlewareOptions} {@link Middleware} options.
      */
     public addMiddleware(_name: string, _mdw: MiddlewareFunction<DataType, EnvType>, _options?: MiddlewareOptions<ConfigType>): void {
-        if (MiddlewareChain.name_registry[_name]) throw new Error('Middleware name already in use ' + _name);
+        if (this.name_registry[_name]) throw new Error('Middleware name already in use ' + _name);
 
         if (_options) {
             let before_values;
@@ -317,7 +317,7 @@ export class MiddlewareChain<DataType = any, EnvType = any, ConfigType = any> {
 
         this.mdws.push(mdw);
         this.mdws.sort((mdw_one: Middleware<DataType, EnvType, ConfigType>, mdw_two: Middleware<DataType, EnvType, ConfigType>): number => (-(mdw_one.weight - mdw_two.weight)));
-        MiddlewareChain.name_registry[_name] = true;
+        this.name_registry[_name] = true;
         try {
             this.resolveWaitlist();
         } catch (e) {}

@@ -550,6 +550,16 @@ export class Bush {
     }
 
     /**
+     * Check if plugin has been added previously
+     * @param plugin_name
+     */
+    public requires(plugin_name: string): boolean {
+        if (!this.config.loaded || !this.config.loaded.plugins) return false;
+        return (this.config.loaded.plugins.indexOf(plugin_name) !== -1);
+
+    }
+
+    /**
      * Add extansion to the bush instance. Extansions are methods exposed by the plugin. They allow
      * easier chain of action interactions.
      *

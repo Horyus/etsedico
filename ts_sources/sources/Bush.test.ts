@@ -816,7 +816,7 @@ describe('Bush Test Suite', () => {
                 const bush_env = {};
 
                 bush = new Bush({event: bush_event, env: bush_env});
-                bush.setEnv('this.is.an.invalid.path.9', {data: 'yes', another_data: 'yes yes'});
+                bush.setEnv('this.is.an.invalid.path.-', {data: 'yes', another_data: 'yes yes'});
 
             } catch (e) {
                 done();
@@ -1002,6 +1002,25 @@ describe('Bush Test Suite', () => {
             } catch (e) {
                 done();
             }
+        });
+
+        test('Checking for plugin when none is there', async (done: Done) => {
+                const bush_event = new EventEmitter();
+                const bush_env = {};
+
+                bush = new Bush({event: bush_event, env: bush_env});
+                if (bush.requires('test')) return done(new Error('Should return false'));
+                done();
+        });
+
+        test('Adding expanding plugin and checking with requires', async (done: Done) => {
+                const bush_event = new EventEmitter();
+                const bush_env = {};
+
+                bush = new Bush({event: bush_event, env: bush_env});
+                bush.plug(new ExpandingPlugin('expanding_plugin', done));
+                if (!bush.requires('expanding_plugin')) return done(new Error('Should return true'));
+                done();
         });
 
     });

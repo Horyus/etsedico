@@ -80,6 +80,7 @@ describe('MiddlewareChain Test Suite', () => {
         try {
             mdwc = new MiddlewareChain(event, env);
             mdwc.addMiddleware('middleware_name', string_any_middleware, {weight: 23, config: string_config});
+            mdwc.addMiddleware('middleware_name', string_any_middleware, {weight: 23, config: string_config});
             done(new Error('Using same middleware_name is forbidden'));
         } catch (e) {
             done();
